@@ -485,7 +485,7 @@ if (videoUploadZone && videoFileInput) {
         videoCompressBtn.style.cursor = "not-allowed";
 
         // =========================================================================
-        // HEY DONOBARD, EARL, AND NISHKY! THIS IS WHERE YOU CONNECT YOUR PYTHON CODE.
+        // HEY DONOBARN, EARL, AND NISHKY! THIS IS WHERE YOU CONNECT YOUR PYTHON CODE.
         // =========================================================================
         // Right now, this button just pretends to work. 
         // When you are ready to make it actually compress videos using Python, follow these steps:
