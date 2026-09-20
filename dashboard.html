@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>StudentPortal Dashboard</title>
+    <link rel="stylesheet" href="dashboard_designs.css">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="top-header">
+        <div class="header-left">
+            <img src="icons/BULSU.svg" alt="BulSU Logo" class="brand-logo">
+            <span class="brand-name">Student Portal</span>
+        </div>
+
+        <div class="header-right">
+            <!-- Notifications Dropdown -->
+            <div class="more-options-container">
+                <button class="icon-btn bell-btn" aria-label="Notifications">
+                    <img src="icons/bell.svg" alt="Notifications">
+                </button>
+                <div class="dropdown-menu hidden" style="width: 220px; padding: 12px; right: -10px;">
+                    <div style="text-align: center; color: #666; font-size: 13px;">No new notifications</div>
+                </div>
+            </div>
+
+            <!-- User Profile Dropdown -->
+            <div class="more-options-container">
+                <div class="user-profile" style="cursor: pointer;">
+                    <div class="avatar">JS</div>
+                    <span class="user-name">John Smith</span>
+                    <img src="icons/dropdown.svg" alt="Dropdown" class="dropdown-icon">
+                </div>
+                <div class="dropdown-menu hidden">
+                    <button class="menu-item">Profile</button>
+                    <button class="menu-item" style="color: var(--school-red);">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. MAIN LAYOUT (Sidebar + Dashboard Content) -->
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <!-- Home -->
+            <a href="#" class="active">
+                <img src="icons/home.svg" alt="Home">
+            </a>
+            <!-- Calendar -->
+            <a href="#">
+                <img src="icons/calendar.svg" alt="Calendar">
+            </a>
+            <!-- Folder -->
+            <a href="#">
+                <img src="icons/folder.svg" alt="Folder">
+            </a>
+            <!-- Settings -->
+            <a href="#">
+                <img src="icons/setting.svg" alt="Settings">
+            </a>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="content-area">
+            <!-- Dashboard Header -->
+            <header class="dashboard-header">
+                <h1>DASHBOARD</h1>
+                <!-- Status Badge -->
+                <div class="status-badge offline">
+                    <img src="icons/offline.svg" alt="Offline Mode">
+                    <span>OFFLINE MODE</span>
+                </div>
+                <div class="status-badge online">
+                    <img src="icons/online.svg" alt="Online Mode">
+                    <span>ONLINE MODE</span>
+                </div>
+            </header>
+
+            <!-- Widgets Grid -->
+            <main class="dashboard-grid">
+                <section class="widget scheduler">
+                    <!-- Widget Header -->
+                    <div class="widget-header">
+                        <h2>SCHEDULER</h2>
+                        <div class="more-options-container">
+                            <button class="icon-btn" aria-label="More options">
+                                <img src="icons/more.svg" alt="More options">
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div class="dropdown-menu hidden">
+                                <button class="menu-item" id="add-category-btn">Add Category</button>
+                                <button class="menu-item">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduler Content -->
+                    <div class="scheduler-main-view" id="scheduler-container">
+                        
+                    </div>
+
+                    <!-- Bulk Remove Confirmation -->
+                    <div class="confirm-box hidden">
+                        <button class="confirm-btn">Confirm Remove</button>
+                    </div>
+
+                    <!-- Templates -->
+
+                    <!-- Category Template -->
+                    <template id="category-template">
+                        <div class="task-category">
+                            <!-- Category Header -->
+                            <div class="widget-subheader">
+                                <!-- Master Checkbox -->
+                                <label class="custom-checkbox category-checkbox">
+                                    <input type="checkbox">
+                                    <span class="checkmark"></span>
+                                </label>
+                                
+                                <h3 class="category-title" contenteditable="true" style="flex: 1;">New Category</h3>
+                                <div class="category-actions">
+                                    <button class="icon-btn toggle-btn" aria-label="Toggle category">
+                                        <img src="icons/dropdown.svg" alt="Toggle">
+                                    </button>
+                                    <button class="icon-btn add-btn" aria-label="Add task">
+                                        <img src="icons/plus.svg" alt="Add task">
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Tasks Container -->
+                            <div class="task-list"></div>
+                        </div>
+                    </template>
+
+                    <!-- Task Card Template -->
+                    <template id="task-card-template">
+                        <div class="task-card">
+                            <div class="card-color-line" style="background-color: #dadce0;">
+                                <!-- Color Picker -->
+                                <input type="color" class="color-picker-input hidden">
+                            </div>
+                            <div class="card-main">
+                                <div class="card-row top-row">
+                                    <div class="task-title-group">
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" class="task-checkbox">
+                                            <span class="checkmark"></span>
+                                        </label>
+                                        <h4 class="task-title" contenteditable="true">New Task</h4>
+                                    </div>
+                                    <button class="icon-btn bell-btn" aria-label="Set reminder">
+                                        <img src="icons/bell.svg" alt="Reminder">
+                                    </button>
+                                </div>
+                                <div class="card-row bottom-row">
+                                    <span class="task-due">No Due Date</span>
+                                    <div class="task-status">
+                                        <span class="status-dot" style="background-color: #dadce0;"></span>
+                                        <span class="status-text">Not Scheduled</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Calendar View -->
+                    <div class="scheduler-calendar-view hidden">
+                        
+                        <div class="calendar-ui">
+                            <!-- Calendar Controls -->
+                            <div class="calendar-header">
+                                <button class="icon-btn prev-month-btn">&lt;</button>
+                                <div class="month-year-selector" style="position: relative; cursor: pointer;">
+                                    <h3 class="current-month-year">September 2026</h3>
+                                    <div class="year-dropdown hidden">
+                                        
+                                    </div>
+                                </div>
+                                <button class="icon-btn next-month-btn">&gt;</button>
+                            </div>
+                            
+                            <!-- Weekdays -->
+                            <div class="calendar-weekdays">
+                                <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                            </div>
+                            
+                            <div class="calendar-days-grid" id="calendar-days"></div>
+
+                            <!-- Time Picker -->
+                            <div class="time-selector">
+                                <img src="icons/bell.svg" alt="Time" class="time-icon">
+                                <div class="custom-time-picker" style="position: relative;">
+                                    <button class="time-display-btn">12:00 PM</button>
+                                    <div class="time-dropdown hidden">
+                                        <div class="time-col hours-col" id="hours-col"></div>
+                                        <div class="time-col minutes-col" id="minutes-col"></div>
+                                        <div class="time-col ampm-col" id="ampm-col">
+                                            <div class="time-option ampm-option">AM</div>
+                                            <div class="time-option ampm-option active">PM</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Calendar Actions -->
+                            <div class="calendar-actions">
+                                <button class="cancel-date-btn">Cancel</button>
+                                <button class="confirm-date-btn">Save Date</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Video Compressor Widget -->
+                <section class="widget compressor">
+                    <!-- Widget Header -->
+                    <div class="widget-header">
+                        <h2>VIDEO COMPRESSOR</h2>
+                    </div>
+
+                    <!-- Upload Zone -->
+                    <div class="upload-zone" id="video-upload-zone">
+                        <img src="icons/file.svg" alt="File Icon" class="upload-icon">
+                        <p class="upload-text" id="video-upload-text">Drag & Drop Your<br>Video File Here</p>
+                        <span class="upload-subtext">Max 5GB</span>
+                        <button class="browse-btn" id="video-browse-btn">or Browse Files</button>
+                        
+                        <input type="file" class="file-input hidden" id="video-file-input" accept="video/*">
+                    </div>
+
+                    <!-- Compress Button -->
+                    <button class="compress-btn" id="video-compress-btn">COMPRESS NOW</button>
+                </section>
+
+                <!-- Quick Notes Widget -->
+                <section class="widget quick-notes">
+                    <!-- Widget Header -->
+                    <div class="widget-header">
+                        <h2>QUICK NOTES</h2>
+                        <div class="more-options-container">
+                            <button class="icon-btn" aria-label="More options">
+                                <img src="icons/more.svg" alt="More options">
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div class="dropdown-menu hidden">
+                                <button class="menu-item" id="add-note-dropdown-btn">Add Note</button>
+                                <button class="menu-item">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Actions -->
+                    <div class="widget-subheader">
+                        <h3>YOUR NOTES</h3>
+                        <button class="icon-btn add-btn" aria-label="Add note">
+                            <img src="icons/plus.svg" alt="Add note">
+                        </button>
+                    </div>
+
+                    <!-- Notes Container -->
+                    <div class="notes-main-view" id="notes-container">
+                        <!-- Javascript will inject note cards here -->
+                    </div>
+
+                    <!-- Confirm Remove Box -->
+                    <div class="confirm-box hidden">
+                        <button class="confirm-btn">Confirm Remove</button>
+                    </div>
+
+                    <!-- Note Template -->
+                    <template id="note-card-template">
+                        
+                        <div class="task-card note-card">
+                            <div class="card-color-line" style="background-color: #f29900;">
+                                <!-- Color Picker -->
+                                <input type="color" class="color-picker-input hidden">
+                            </div>
+                            <div class="card-main">
+                                <div class="card-row top-row">
+                                    <div class="task-title-group">
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" class="task-checkbox">
+                                            <span class="checkmark"></span>
+                                        </label>
+                                        <p class="note-text" contenteditable="true">Type your note here...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </section>
+            </main>
+        </div>
+    </div>
+    <!-- External Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="dashboard_logic.js"></script>
+</body>
+
+</html>

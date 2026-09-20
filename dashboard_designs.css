@@ -1,0 +1,861 @@
+/* Global Variables */
+:root {
+    /* Backgrounds */
+    --bg-color: #f8f9fc;
+    --surface-color: #ffffff;
+
+    /* Text Colors */
+    --text-main: #1f1f1f;
+    --text-muted: #757575;
+
+    /* School Colors (BULSU) */
+    --school-red: #d32f2f;
+    --school-orange: #f57c00;
+
+    /* Borders and Shadows */
+    --border-color: #e0e0e0;
+    --card-shadow: 0px 4px 15px rgba(0, 0, 0, 0.05);
+    --radius-lg: 20px;
+    /* Smooth, rounded corners */
+}
+
+/* Browser Ressetter & Global Font */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+.top-header {
+    height: 70px;
+    background-color: #ebedf2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+}
+
+.app-layout {
+    display: flex;
+    height: calc(100vh - 70px);
+}
+
+.sidebar {
+    width: 80px;
+    background-color: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 30px;
+    gap: 30px;
+}
+
+.content-area {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 32px;
+    height: 32px;
+}
+
+.brand-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background-color: var(--surface-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--text-main);
+    box-shadow: var(--card-shadow);
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    align-items: start;
+}
+
+/* Widget Boxes for the sections */
+.widget {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Widget headers (top row of each widget) */
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.widget-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Widget Subheaders (e.g., "UPCOMING TASKS") */
+.widget-subheader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
+}
+
+.widget-subheader h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: 0.5px;
+    /* Spreads out the ALL CAPS text slightly so it looks premium */
+}
+
+.subheader-actions,
+.category-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.upload-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.upload-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 5px;
+}
+
+.upload-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.upload-subtext {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Orange Action Buttons */
+.browse-btn,
+.compress-btn {
+    background-color: var(--school-orange);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.browse-btn {
+    width: auto;
+    margin-top: 15px;
+}
+
+.task-card {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.card-color-line {
+    width: 6px;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    /* Anchors the color picker popup here */
+}
+
+/* Fixes the native color picker jumping to the top of the screen */
+.color-picker-input.hidden {
+    display: block !important;
+    /* Overrides our global hidden class */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    /* Invisible, but physically covers the line */
+    cursor: pointer;
+}
+
+.card-main {
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Text Styling */
+.task-title,
+.note-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    outline: none;
+}
+
+.task-due {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Task Status */
+.task-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    /* Space between the dot and the text */
+    font-size: 12px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    /* Makes the dot a perfect circle */
+}
+
+/* Hidden Class (Javascript) */
+.hidden {
+    display: none !important;
+    /* Instantly hides anything with this class. Extremely important for our popups later! */
+}
+
+/* Icon Sizes */
+.icon-btn img,
+.dropdown-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.sidebar a img {
+    width: 24px;
+    height: 24px;
+    opacity: 0.6;
+    /* Makes them a sleek gray until hovered */
+}
+
+/* Makes the sidebar icons light up when hovered! */
+.sidebar a:hover img {
+    opacity: 1;
+}
+
+/* The Active Sidebar Item (Home) */
+.sidebar a.active {
+    background-color: #fff0e6;
+    /* Very light orange background */
+    border-left: 4px solid var(--school-orange);
+    /* Thick orange line on the left */
+    width: 100%;
+    /* Stretches across the sidebar */
+    display: flex;
+    justify-content: center;
+    padding: 15px 0;
+}
+
+/* Magic CSS Filter to turn black SVGs into Orange (#f57c00) */
+.sidebar a.active img,
+.upload-icon {
+    opacity: 1;
+    filter: invert(52%) sepia(90%) saturate(1450%) hue-rotate(1deg) brightness(102%) contrast(97%);
+}
+
+/* Dashboard Header (Title and Status) */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.dashboard-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+/* Fixes the giant Offline / Online Icons */
+.status-badge img {
+    width: 18px;
+    height: 18px;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.status-badge.offline {
+    background-color: #fee2e2;
+    color: var(--school-red);
+}
+
+/* Hides the online badge by default so they don't both show at once */
+.status-badge.online {
+    display: none;
+}
+
+/* mooth Dropdown Menus */
+.more-options-container {
+    position: relative;
+    /* Anchors the floating menu exactly below the '...' button */
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--surface-color);
+    /* Crisp white */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    /* Smooth rounded corners */
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.08);
+    /* A soft shadow so it floats above the page */
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+    min-width: 150px;
+    z-index: 50;
+    /* Ensures it stays on top of everything else */
+    margin-top: 8px;
+    /* Slight gap from the button */
+
+    /* Smooth motion setup (This is its VISIBLE state) */
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: all 0.2s ease-in-out;
+}
+
+/* When Javascript hides the menu (This is its INVISIBLE state) */
+.dropdown-menu.hidden {
+    display: flex !important;
+    /* Overrides global hidden class to animate it! */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px);
+    /* Slides it up slightly so it drops down when opened */
+}
+
+/* Buttons inside the list */
+.menu-item {
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    /* Makes the hover effect smooth */
+    width: 100%;
+    /* Stretches the button to fill the menu */
+}
+
+/* Hover effect */
+.menu-item:hover {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+}
+
+/* 28. Confirm Remove Box */
+.confirm-box {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #fee2e2;
+    /* Light red */
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.confirm-btn {
+    background-color: var(--school-red);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.confirm-btn:hover {
+    background-color: #b91c1c;
+}
+
+/* 29. Drag and Drop Styles */
+.task-card.dragging {
+    opacity: 0.5; /* Makes the card semi-transparent when you are dragging it */
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15); /* Adds a heavy shadow so it looks lifted */
+    cursor: grabbing; /* Changes the cursor to a closed hand */
+}
+
+/* Make sure all cards show the open hand cursor when hovering */
+.task-card {
+    cursor: grab;
+}
+
+/* 30. Custom Calendar UI */
+.calendar-ui {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.current-month-year {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.calendar-header .icon-btn {
+    font-weight: bold;
+    color: var(--text-muted);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.calendar-day {
+    aspect-ratio: 1; /* Makes them perfectly square */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%; /* Smooth circles */
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.calendar-day:hover {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+}
+
+.calendar-day.active {
+    background-color: var(--school-orange);
+    color: white;
+}
+
+.calendar-day.empty {
+    cursor: default;
+    background-color: transparent;
+}
+
+.time-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.time-icon {
+    width: 20px;
+    height: 20px;
+    filter: invert(53%) sepia(85%) saturate(2250%) hue-rotate(3deg) brightness(103%) contrast(97%); /* Orange */
+}
+
+.time-picker {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    outline: none;
+}
+
+.calendar-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.cancel-date-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.confirm-date-btn {
+    background-color: var(--school-orange);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 31. Smooth Animations for Calendar & Clicks */
+
+/* Swapping between the scheduler and the calendar */
+@keyframes viewFadeSlide {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+.scheduler-calendar-view:not(.hidden),
+.scheduler-main-view:not(.hidden) {
+    animation: viewFadeSlide 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+/* The individual numbered days "popping" in when you swap months */
+@keyframes popIn {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.8); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+.calendar-day {
+    animation: popIn 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+/* Make buttons physically "squish" down when clicked for tactile feedback */
+.icon-btn:active, 
+.confirm-date-btn:active, 
+.cancel-date-btn:active,
+.menu-item:active {
+    transform: scale(0.92);
+    transition: transform 0.1s;
+}
+
+/* 32. Advanced Logic UI */
+
+/* Custom Checkbox */
+.task-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.custom-checkbox {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: none; /* Hidden by default */
+}
+
+/* Shown only when widget is in remove mode */
+.widget.remove-mode .custom-checkbox {
+    display: inline-flex;
+}
+
+.custom-checkbox input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: transparent;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.custom-checkbox:hover input ~ .checkmark {
+    border-color: var(--school-orange);
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+    background-color: var(--school-orange);
+    border-color: var(--school-orange);
+}
+
+/* Create the checkmark (hidden when not checked) */
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* Shrink Animation for Deleting Cards */
+@keyframes shrinkOut {
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+        height: 0;
+        padding: 0;
+        margin: 0;
+        border-width: 0;
+    }
+}
+
+.shrink-out {
+    animation: shrinkOut 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    pointer-events: none; /* prevent clicks during death */
+}
+
+/* Calendar Slide Animations */
+@keyframes slideLeftIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideRightIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.slide-left {
+    animation: slideLeftIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+.slide-right {
+    animation: slideRightIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+/* Dropdown Shared Styles for Year and Time */
+.year-dropdown, .time-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 100;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.year-dropdown {
+    left: 50%;
+    transform: translateX(-50%);
+    max-height: 200px;
+    overflow-y: auto;
+    min-width: 80px;
+    text-align: center;
+}
+
+.year-option {
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    transition: 0.2s;
+}
+
+.year-option:hover {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+}
+
+.year-option.active {
+    background-color: var(--school-orange);
+    color: white;
+}
+
+/* Time Picker Dropdown */
+.time-display-btn {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+.time-display-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.time-dropdown {
+    display: flex;
+    left: -20px;
+    padding: 10px;
+    gap: 10px;
+}
+
+.time-col {
+    display: flex;
+    flex-direction: column;
+    max-height: 180px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+}
+.time-col::-webkit-scrollbar {
+    display: none; /* Chrome */
+}
+
+.time-option {
+    padding: 8px 15px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    border-radius: 6px;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.time-option:hover {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+}
+
+.time-option.active {
+    background-color: var(--school-orange);
+    color: white;
+}
+
+.ampm-col {
+    justify-content: center;
+    border-left: 1px solid var(--border-color);
+    padding-left: 10px;
+}
