@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename 
 import os 
 
+# EARL NISHKY INSTALL FLASK AND OTHER THINGS BEFORE UPDATING BACKEND
+# into your terminal type this, pip install -r requirements.txt
 app = Flask(__name__)
 
 
