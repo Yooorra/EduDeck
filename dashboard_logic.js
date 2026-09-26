@@ -498,8 +498,8 @@ if (videoUploadZone && videoFileInput) {
         const formData = new FormData();
         formData.append('video_file', selectedVideoFile);
 
-        /* ---> DELETE THIS LINE TO TURN ON THE REAL CODE --->
-        fetch('http://127.0.0.1:5000/compress', { // Put your Python server link here!
+        
+            fetch ('http://127.0.0.1:5000/compress', { // Put your Python server link here!
             method: 'POST',
             body: formData
         })
@@ -525,7 +525,7 @@ if (videoUploadZone && videoFileInput) {
             videoCompressBtn.style.opacity = "1";
             videoCompressBtn.style.cursor = "pointer";
         });
-        <--- DELETE THIS LINE TO TURN ON THE REAL CODE <--- */
+        
 
         // =========================================================================
         // DELETE THIS "FAKE DELAY" BLOCK ONCE PYTHON IS CONNECTED!
