@@ -498,47 +498,33 @@ if (videoUploadZone && videoFileInput) {
         const formData = new FormData();
         formData.append('video_file', selectedVideoFile);
 
-        
-            fetch ('http://127.0.0.1:5000/compress', { // Put your Python server link here!
+
+        fetch('http://127.0.0.1:5000/compress', { // Put your Python server link here!
             method: 'POST',
             body: formData
         })
-        .then(response => response.json()) // We wait for Python to talk back to us
-        .then(data => {
-            // When Python successfully finishes compressing, it will run this!
-            alert("Compression Complete! Download link: " + data.download_url);
-            
-            // This resets the button back to normal so they can upload again
-            videoCompressBtn.textContent = "COMPRESS NOW";
-            videoCompressBtn.style.opacity = "1";
-            videoCompressBtn.style.cursor = "pointer";
-            videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
-            selectedVideoFile = null;
-            videoFileInput.value = '';
-        })
-        .catch(error => {
-            // If Python is turned off or crashed, it will run this!
-            alert("Oops! Failed to connect. Make sure the Python server is running.");
-            
-            // This resets the button back to normal
-            videoCompressBtn.textContent = "COMPRESS NOW";
-            videoCompressBtn.style.opacity = "1";
-            videoCompressBtn.style.cursor = "pointer";
-        });
-        
+            .then(response => response.json()) // We wait for Python to talk back to us
+            .then(data => {
+                // When Python successfully finishes compressing, it will run this!
+                alert("Compression Complete! Download link: " + data.download_url);
 
-        // =========================================================================
-        // DELETE THIS "FAKE DELAY" BLOCK ONCE PYTHON IS CONNECTED!
-        // =========================================================================
-        setTimeout(() => {
-            alert("Fake compression complete! Hook up the Python backend to make this real.");
-            videoCompressBtn.textContent = "COMPRESS NOW";
-            videoCompressBtn.style.opacity = "1";
-            videoCompressBtn.style.cursor = "pointer";
-            videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
-            selectedVideoFile = null;
-            videoFileInput.value = '';
-        }, 3000);
-        /* =============================================================================================================*/
+                // This resets the button back to normal so they can upload again
+                videoCompressBtn.textContent = "COMPRESS NOW";
+                videoCompressBtn.style.opacity = "1";
+                videoCompressBtn.style.cursor = "pointer";
+                videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
+                selectedVideoFile = null;
+                videoFileInput.value = '';
+            })
+            .catch(error => {
+                // If Python is turned off or crashed, it will run this!
+                alert("Oops! Failed to connect. Make sure the Python server is running.");
+
+                // This resets the button back to normal
+                videoCompressBtn.textContent = "COMPRESS NOW";
+                videoCompressBtn.style.opacity = "1";
+                videoCompressBtn.style.cursor = "pointer";
+            });
+
     });
 }
