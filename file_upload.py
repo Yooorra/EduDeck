@@ -2,13 +2,18 @@ from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename 
 import os 
 
+# TODO TEAMMATE A: Import CORS from flask_cors here so the browser doesn't block us!
+
 # EARL NISHKY INSTALL FLASK AND OTHER THINGS BEFORE UPDATING BACKEND
 # into your terminal type this, pip install -r requirements.txt
 app = Flask(__name__)
+# TODO TEAMMATE A: Initialize CORS here (e.g. CORS(app))
 
 
 UPLOAD_FOLDER = 'Upload_backend'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# TODO TEAMMATE A: Add an os.makedirs check here to create the UPLOAD_FOLDER if it doesn't exist yet!
 
 
 @app.route('/compress', methods=['POST'])
@@ -19,7 +24,25 @@ def upload_video():
     file = request.files['video_file']
 
     filename = secure_filename(file.filename)
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-    return jsonify({'download_url': f'/Upload_backend/{filename}'}), 
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(input_path)
+    
+    # =========================================================================
+    # TODO TEAMMATE B: THE COMPRESSOR!
+    # Right now, we just save the original file. 
+    # Write Python code here to use FFmpeg to compress the video at `input_path` 
+    # and save it to a new file (e.g., `compressed_video.mp4`).
+    # Make sure to update the download_url below to point to your NEW compressed file!
+    # =========================================================================
+
+    return jsonify({'download_url': f'/Upload_backend/{filename}'})
+
+# =========================================================================
+# TODO TEAMMATE A: SERVE THE DOWNLOAD!
+# Create a new @app.route('/Upload_backend/<filename>') here.
+# It should use Flask's `send_from_directory` to actually send the file back 
+# so the user can download it when they click the link!
+# =========================================================================
+
 if __name__ == '__main__':
     app.run(debug=True)
