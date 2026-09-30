@@ -502,28 +502,49 @@ if (videoUploadZone && videoFileInput) {
             method: 'POST',
             body: formData
         })
-            .then(response => response.json()) // We wait for Python to talk back to us
-            .then(data => {
-                // When Python successfully finishes compressing, it will run this!
-                alert("Compression Complete! Download link: " + data.download_url);
+            //removed the entire retrieval code here
+            //changed it to return the blob instead of json
+            .then(response => {
+                if (!response.ok) {
+                    //I used response.status so it will return the error code, but I can change it to text
+                    throw new Error('Server Returned ${response.status}');
+                }
+                //video file (blob) instead of text (json)
+                return response.blob();
+            })
+            .then (blob => {
+                //temporary URL for the compressed video file
+                const downloadUrl = URL.createObjectURL(blob);
+                //temporary link to download the compressed video
+                const downloadLink = document.createElement('a');
+                
+                //misc 
+                downloadLink.href = downloadUrl;
+                downloadLink.download = 'compressed_video.mp4';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
 
-                // This resets the button back to normal so they can upload again
-                videoCompressBtn.textContent = "COMPRESS NOW";
+                //remove and release the temporary link and URL after download
+                downloadLink.remove();
+                URL.revokeObjectURL(downloadUrl);
+
+                videoCompressBtn.textContent = "COMPRESS";
                 videoCompressBtn.style.opacity = "1";
                 videoCompressBtn.style.cursor = "pointer";
-                videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
+
+                videoUploadText.innerHTML = "Drag & drop your<br>video file here";
                 selectedVideoFile = null;
                 videoFileInput.value = '';
+
+                alert ("Video compressed successfully!");
             })
             .catch(error => {
-                // If Python is turned off or crashed, it will run this!
-                alert("Oops! Failed to connect. Make sure the Python server is running.");
-
-                // This resets the button back to normal
+                console.error('Compression Error:', error);
+                alert("An error occurred during compression. Please try again.");
                 videoCompressBtn.textContent = "COMPRESS NOW";
                 videoCompressBtn.style.opacity = "1";
                 videoCompressBtn.style.cursor = "pointer";
-            });
+            })
 
     });
 }
