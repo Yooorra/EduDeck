@@ -44,5 +44,21 @@ def upload_video():
 # so the user can download it when they click the link!
 # =========================================================================
 
+# =========================================================================
+# TODO TEAMMATE C (or B): DOCUMENT CONVERTER
+# Create a new @app.route('/convert', methods=['POST']) here.
+# 1. Receive the document file (e.g., .doc or .ppt) from the frontend via request.files
+# 2. Use a library like `python-docx2pdf` or an API to convert it to a PDF.
+# 3. Save it to UPLOAD_FOLDER and return the new download_url as JSON!
+# =========================================================================
+
+# =========================================================================
+# TODO TEAMMATE D (or B): DOCUMENT MERGER
+# Create a new @app.route('/merge', methods=['POST']) here.
+# 1. Receive multiple files (e.g., request.files.getlist('doc_files'))
+# 2. Use a library like `PyPDF2` to merge them into one single PDF.
+# 3. Save the merged file and return the new download_url as JSON!
+# =========================================================================
+
 if __name__ == '__main__':
     app.run(debug=True)

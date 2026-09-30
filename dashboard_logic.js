@@ -498,7 +498,6 @@ if (videoUploadZone && videoFileInput) {
         const formData = new FormData();
         formData.append('video_file', selectedVideoFile);
 
-
         fetch('http://127.0.0.1:5000/compress', { // Put your Python server link here!
             method: 'POST',
             body: formData
@@ -560,7 +559,7 @@ if (docUploadZone && docFileInput) {
     // Handle Drag & Drop
     docUploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        docUploadZone.style.backgroundColor = '#fff0e6'; 
+        docUploadZone.style.backgroundColor = '#fff0e6';
         docUploadZone.style.borderColor = 'var(--school-orange)';
     });
 
@@ -580,11 +579,11 @@ if (docUploadZone && docFileInput) {
     function handleDocFiles(files) {
         if (files.length > 0) {
             selectedDocFiles = Array.from(files);
-            
+
             // Build text showing how many files were uploaded
             let fileNames = selectedDocFiles.map(f => f.name).join('<br>');
             docSelectedFilesText.innerHTML = `<strong>Selected Files:</strong><br>${fileNames}`;
-            
+
             // Swap to the Actions View
             docUploadView.classList.add('hidden-view');
             docUploadView.classList.remove('active-view');
@@ -597,7 +596,7 @@ if (docUploadZone && docFileInput) {
     docCancelBtn.addEventListener('click', () => {
         selectedDocFiles = [];
         docFileInput.value = '';
-        
+
         // Swap back to Upload View
         docActionView.classList.add('hidden-view');
         docActionView.classList.remove('active-view');
@@ -607,6 +606,11 @@ if (docUploadZone && docFileInput) {
 
     // Placeholder for Convert Action
     btnDocConvert.addEventListener('click', () => {
+        // TODO TEAMMATE: Connect to Python's /convert route!
+        // 1. Create a new FormData()
+        // 2. Append the selectedDocFiles[0] to it
+        // 3. Use fetch('http://127.0.0.1:5000/convert', ...) to send it to Python
+        // 4. Handle the JSON response (e.g., showing a download link!)
         alert("This will send " + selectedDocFiles.length + " file(s) to Python to convert to PDF/DOC/PPT!");
     });
 
@@ -616,6 +620,28 @@ if (docUploadZone && docFileInput) {
             alert("You need at least 2 files to merge them!");
             return;
         }
+
+        // TODO TEAMMATE: Connect to Python's /merge route!
+        // 1. Create a new FormData()
+        // 2. Use a loop to append ALL files in selectedDocFiles array to the formData
+        // 3. Use fetch('http://127.0.0.1:5000/merge', ...) to send them all to Python
+        // 4. Handle the JSON response to show the merged download link
         alert("This will send " + selectedDocFiles.length + " files to Python to merge them together!");
+    });
+}
+
+/* ========================================================================= */
+/* 10. Draggable Custom Layout */
+/* ========================================================================= */
+const dashboardGrid = document.querySelector('.dashboard-grid');
+if (dashboardGrid) {
+    new Sortable(dashboardGrid, {
+        animation: 250,           // ms, animation speed moving items when sorting
+        easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+        ghostClass: 'sortable-ghost',  // Class name for the drop placeholder
+        dragClass: 'sortable-drag',    // Class name for the dragging item
+        delay: 150,               // Time in ms to define when the sorting should start (useful for clicking inner elements vs dragging)
+        delayOnTouchOnly: true,   // Only delay if user is using touch
+        handle: '.widget-header', // Optional: if you only want the header to be the drag handle. (Removing this makes the whole card draggable)
     });
 }
