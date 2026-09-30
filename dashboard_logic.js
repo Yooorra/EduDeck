@@ -528,3 +528,94 @@ if (videoUploadZone && videoFileInput) {
 
     });
 }
+
+/* ========================================================================= */
+/* 9. Document Tools Logic */
+/* ========================================================================= */
+const docUploadZone = document.getElementById('doc-upload-zone');
+const docUploadText = document.getElementById('doc-upload-text');
+const docBrowseBtn = document.getElementById('doc-browse-btn');
+const docFileInput = document.getElementById('doc-file-input');
+
+const docUploadView = document.getElementById('doc-upload-view');
+const docActionView = document.getElementById('doc-action-view');
+const docSelectedFilesText = document.getElementById('doc-selected-files');
+const docCancelBtn = document.getElementById('doc-cancel-btn');
+const btnDocConvert = document.getElementById('btn-doc-convert');
+const btnDocMerge = document.getElementById('btn-doc-merge');
+
+let selectedDocFiles = [];
+
+if (docUploadZone && docFileInput) {
+    // Handle Clicking Browse
+    docBrowseBtn.addEventListener('click', () => {
+        docFileInput.click();
+    });
+
+    // Handle File Selection
+    docFileInput.addEventListener('change', (e) => {
+        handleDocFiles(e.target.files);
+    });
+
+    // Handle Drag & Drop
+    docUploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        docUploadZone.style.backgroundColor = '#fff0e6'; 
+        docUploadZone.style.borderColor = 'var(--school-orange)';
+    });
+
+    docUploadZone.addEventListener('dragleave', () => {
+        docUploadZone.style.backgroundColor = '#fafafa';
+        docUploadZone.style.borderColor = 'var(--border-color)';
+    });
+
+    docUploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        docUploadZone.style.backgroundColor = '#fafafa';
+        docUploadZone.style.borderColor = 'var(--border-color)';
+        handleDocFiles(e.dataTransfer.files);
+    });
+
+    // Function to process selected files and swap views
+    function handleDocFiles(files) {
+        if (files.length > 0) {
+            selectedDocFiles = Array.from(files);
+            
+            // Build text showing how many files were uploaded
+            let fileNames = selectedDocFiles.map(f => f.name).join('<br>');
+            docSelectedFilesText.innerHTML = `<strong>Selected Files:</strong><br>${fileNames}`;
+            
+            // Swap to the Actions View
+            docUploadView.classList.add('hidden-view');
+            docUploadView.classList.remove('active-view');
+            docActionView.classList.remove('hidden-view');
+            docActionView.classList.add('active-view');
+        }
+    }
+
+    // Handle "Cancel / Start Over"
+    docCancelBtn.addEventListener('click', () => {
+        selectedDocFiles = [];
+        docFileInput.value = '';
+        
+        // Swap back to Upload View
+        docActionView.classList.add('hidden-view');
+        docActionView.classList.remove('active-view');
+        docUploadView.classList.remove('hidden-view');
+        docUploadView.classList.add('active-view');
+    });
+
+    // Placeholder for Convert Action
+    btnDocConvert.addEventListener('click', () => {
+        alert("This will send " + selectedDocFiles.length + " file(s) to Python to convert to PDF/DOC/PPT!");
+    });
+
+    // Placeholder for Merge Action
+    btnDocMerge.addEventListener('click', () => {
+        if (selectedDocFiles.length < 2) {
+            alert("You need at least 2 files to merge them!");
+            return;
+        }
+        alert("This will send " + selectedDocFiles.length + " files to Python to merge them together!");
+    });
+}

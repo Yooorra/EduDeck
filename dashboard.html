@@ -239,6 +239,48 @@
                     <button class="compress-btn" id="video-compress-btn">COMPRESS NOW</button>
                 </section>
 
+                <!-- Document Tools Widget -->
+                <section class="widget doc-tools">
+                    <div class="widget-header">
+                        <h2>DOCUMENT TOOLS</h2>
+                    </div>
+
+                    <!-- View 1: Upload Zone -->
+                    <div class="doc-tools-view active-view" id="doc-upload-view">
+                        <div class="upload-zone" id="doc-upload-zone">
+                            <img src="icons/file.svg" alt="File Icon" class="upload-icon">
+                            <p class="upload-text" id="doc-upload-text">Drag & Drop Documents Here<br><span>(PDF, DOC, PPT)</span></p>
+                            <button class="browse-btn" id="doc-browse-btn">or Browse Files</button>
+                            <input type="file" class="file-input hidden" id="doc-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx" multiple>
+                        </div>
+                    </div>
+
+                    <!-- View 2: Action Selection (Animates in) -->
+                    <div class="doc-tools-view hidden-view" id="doc-action-view">
+                        <div class="doc-file-info" id="doc-selected-files">
+                            <!-- File names go here -->
+                        </div>
+                        
+                        <p class="doc-action-title">What would you like to do?</p>
+                        
+                        <div class="doc-action-buttons">
+                            <!-- Convert Button -->
+                            <div class="doc-action-card" id="btn-doc-convert">
+                                <h3>Convert</h3>
+                                <p>To .pdf, .doc, or .ppt</p>
+                            </div>
+                            
+                            <!-- Merge Button -->
+                            <div class="doc-action-card" id="btn-doc-merge">
+                                <h3>Merge</h3>
+                                <p>Combine multiple files</p>
+                            </div>
+                        </div>
+
+                        <button class="cancel-date-btn" id="doc-cancel-btn" style="margin-top: 15px; width: 100%;">Cancel / Start Over</button>
+                    </div>
+                </section>
+
                 <!-- Quick Notes Widget -->
                 <section class="widget quick-notes">
                     <!-- Widget Header -->

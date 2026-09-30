@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Student Portal</title>
+
+    <!-- We can re-use the same fonts and CSS file from the dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard_designs.css">
+</head>
+
+<body>
+
+    <!-- This will be the main box in the center of the screen -->
+    <div class="login-wrapper">
+        <div class="login-box widget">
+
+            <!-- Logo and Title area -->
+            <div class="login-header">
+                <h2>Welcome Back!</h2>
+                <p>Please login to your account</p>
+            </div>
+
+            <!-- The Form -->
+            <form id="login-form">
+                <!-- Username -->
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your student ID">
+                </div>
+
+                <!-- Password -->
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+
+                <!-- Login Button -->
+                <button type="button" class="compress-btn" id="login-btn">LOGIN</button>
+            </form>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
