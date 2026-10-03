@@ -39,6 +39,7 @@ def upload_video():
     output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
 
+<<<<<<< HEAD
     command = [
         'ffmpeg', '-y', '-i', input_path,
         '-c:v', 'libx264', '-crf', '28', '-preset', 'medium',
@@ -56,6 +57,17 @@ def upload_video():
     # ======================================================================
 
     return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4') #I changed this to send the compressed video back to the user instead of just returning a download URL - EARL
+=======
+    # =========================================================================
+    # TODO NISHKY:
+    # Okay lang dun sa job on the Javascript blob download. 8/10. 
+    # Because your JS changes is now expecting a raw video file instead of text/JSON, 
+    # you need to change this return statement. 
+    # Instead of `jsonify(...)`, use Flask's `send_file()` to return the .mp4 file nalang
+    # e.g., return send_file(input_path, as_attachment=True)
+    # =========================================================================
+    return jsonify({'download_url': f'/Upload_backend/{filename}'})
+>>>>>>> d3c670e65c310dbf6b4e19bead2cdc35a27b6e69
 
 # =========================================================================
 # TODO TEAMMATE A: SERVE THE DOWNLOAD!
