@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file #Added send_file to send the compressed video back to the user -EARL
 from werkzeug.utils import secure_filename 
 import os 
+import subprocess #this is for running the ffmpeg command in the terminal -EARL
 
 # TODO TEAMMATE A: Import CORS from flask_cors here so the browser doesn't block us!
 
@@ -30,12 +31,31 @@ def upload_video():
     # =========================================================================
     # TODO TEAMMATE B: THE COMPRESSOR!
     # Right now, we just save the original file. 
-    # Write Python code here to use FFmpeg to compress the video at `input_path` 
-    # and save it to a new file (e.g., `compressed_video.mp4`).
-    # Make sure to update the download_url below to point to your NEW compressed file!
-    # =========================================================================
+        # Write Python code here to use FFmpeg to compress the video at `input_path` 
+        # and save it to a new file (e.g., `compressed_video.mp4`).
+        # Make sure to update the download_url below to point to your NEW compressed file!
+        # 
+    #ffmpeg command to compress the video with good quality -EARL
+    output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
+    output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
 
-    return jsonify({'download_url': f'/Upload_backend/{filename}'})
+    command = [
+        'ffmpeg', '-y', '-i', input_path,
+        '-c:v', 'libx264', '-crf', '28', '-preset', 'medium',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-movflags', '+faststart',
+        output_path
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    #If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
+    if result.returncode != 0:
+        print(result.stderr)
+        return 'Compression failed', 500
+    
+    # ======================================================================
+
+    return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4') #I changed this to send the compressed video back to the user instead of just returning a download URL - EARL
 
 # =========================================================================
 # TODO TEAMMATE A: SERVE THE DOWNLOAD!
