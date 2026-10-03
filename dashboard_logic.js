@@ -513,6 +513,11 @@ if (videoUploadZone && videoFileInput) {
                 return response.blob();
             })
             .then (blob => {
+                //the file sizes in MB, will show how much ffmpeg saved - EARL
+                const originalMB = (selectedVideoFile.size / 1024 / 1024).toFixed(2);
+                const compressedMB = (blob.size / 1024 / 1024).toFixed(2);
+                const savedPercent = (((selectedVideoFile.size - blob.size) / selectedVideoFile.size) * 100).toFixed(0);
+
                 //temporary URL for the compressed video file
                 const downloadUrl = URL.createObjectURL(blob);
                 //temporary link to download the compressed video
@@ -535,8 +540,9 @@ if (videoUploadZone && videoFileInput) {
                 videoUploadText.innerHTML = "Drag & drop your<br>video file here";
                 selectedVideoFile = null;
                 videoFileInput.value = '';
-
-                alert ("Video compressed successfully!");
+                
+                // I change this so the alert will show the original and compressed file sizes - EARL
+                alert(`Video compressed successfully!\nOriginal: ${originalMB} MB\nCompressed: ${compressedMB} MB`);
             })
             .catch(error => {
                 console.error('Compression Error:', error);
