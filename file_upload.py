@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file #Added send_file to send th
 from werkzeug.utils import secure_filename 
 import os 
 import subprocess #this is for running the ffmpeg command in the terminal -EARL
+from PyPDF2 import PdfMerger
 
 # TODO TEAMMATE A: Import CORS from flask_cors here so the browser doesn't block us!
 
@@ -38,6 +39,46 @@ def upload_video():
     #ffmpeg command to compress the video with good quality -EARL
     output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
+
+//document merger 
+@app.route('/merge', methods=['POST'])
+def merge_documents():
+    files = request.files.getlist('doc_files')
+
+    //check if at least two files were uploaded
+    if len(files) < 2:
+        return jsonify({'error': 'Please upload at least two documents to merge.'}), 400
+    saved_files = []
+
+    try:
+        for file in files:
+            if not file.filename:
+                continue
+
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            saved_files.append(file_path)
+
+        //check if at least two valid files were saved
+        if len(saved_files) < 2:
+            return jsonify({'error': 'Please upload at least two valid documents to merge.'}), 400
+
+        output_filename = 'merged_document.pdf'
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
+
+        merger = PdfMerger()
+        for file_path in saved_files:
+            merger.append(file_path)
+
+        merger.write(output_path)
+        merger.close()
+
+        return jsonify({'download_url': f'/Upload_backend/{output_filename}'})
+
+    except Exception as e:
+        print(f"Error during document merging: {e}")
+        return jsonify({'error': 'An error occurred while merging documents.'}), 500
 
 <<<<<<< HEAD
     command = [
