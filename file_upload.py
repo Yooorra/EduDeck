@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file #Added send_file to send the compressed video back to the user -EARL
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from werkzeug.utils import secure_filename 
 import os 
 import subprocess #this is for running the ffmpeg command in the terminal -EARL
@@ -40,12 +40,30 @@ def upload_video():
     output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
 
-//document merger 
+    command = [
+        'ffmpeg', '-y', '-i', input_path,
+        '-c:v', 'libx264', '-crf', '28', '-preset', 'medium',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-movflags', '+faststart',
+        output_path
+    ]
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    #If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
+    if result.returncode != 0:
+        print(result.stderr)
+        return 'Compression failed', 500
+    
+    # ======================================================================
+
+    return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4') #I changed this to send the compressed video back to the user instead of just returning a download URL - EARL
+
+#document merger 
 @app.route('/merge', methods=['POST'])
 def merge_documents():
     files = request.files.getlist('doc_files')
 
-    //check if at least two files were uploaded
+    #check if at least two files were uploaded
     if len(files) < 2:
         return jsonify({'error': 'Please upload at least two documents to merge.'}), 400
     saved_files = []
@@ -60,7 +78,7 @@ def merge_documents():
             file.save(file_path)
             saved_files.append(file_path)
 
-        //check if at least two valid files were saved
+        #check if at least two valid files were saved
         if len(saved_files) < 2:
             return jsonify({'error': 'Please upload at least two valid documents to merge.'}), 400
 
@@ -80,39 +98,41 @@ def merge_documents():
         print(f"Error during document merging: {e}")
         return jsonify({'error': 'An error occurred while merging documents.'}), 500
 
-<<<<<<< HEAD
-    command = [
-        'ffmpeg', '-y', '-i', input_path,
-        '-c:v', 'libx264', '-crf', '28', '-preset', 'medium',
-        '-c:a', 'aac', '-b:a', '128k',
-        '-movflags', '+faststart',
-        output_path
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
-
-    #If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
-    if result.returncode != 0:
-        print(result.stderr)
-        return 'Compression failed', 500
+#serve the merged document for download
+@app.route('/Upload_backend/<filename>')
+def serve_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
     
-    # ======================================================================
+#document converter
+@app.route('/convert', methods=['POST'])
+def convert_document():
 
-    return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4') #I changed this to send the compressed video back to the user instead of just returning a download URL - EARL
+    if 'doc_file' not in request.files:
+        return jsonify({'error': 'No document file found.'}), 400
+    file = request.files['doc_file']
+    
+    if not file.filename:
+        return jsonify({'error': 'No filename provided.'}), 400
+    filename = secure_filename(file.filename)
 
-# =========================================================================
-# TODO TEAMMATE A: SERVE THE DOWNLOAD!
-# Create a new @app.route('/Upload_backend/<filename>') here.
-# It should use Flask's `send_from_directory` to actually send the file back 
-# so the user can download it when they click the link!
-# =========================================================================
+    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(input_path)
 
-# =========================================================================
-# TODO TEAMMATE C (or B): DOCUMENT CONVERTER
-# Create a new @app.route('/convert', methods=['POST']) here.
-# 1. Receive the document file (e.g., .doc or .ppt) from the frontend via request.files
-# 2. Use a library like `python-docx2pdf` or an API to convert it to a PDF.
-# 3. Save it to UPLOAD_FOLDER and return the new download_url as JSON!
-# =========================================================================
+    try:
+        subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', input_path, '--outdir', app.config['UPLOAD_FOLDER']], check=True)
+        output_filename = os.path.splitext(filename)[0] + '.pdf'
+
+    except subprocess.CalledProcessError as e:
+        print(f'Conversion failed: {e}')
+        return jsonify({'error': 'Document conversion failed.'}), 500
+    
+    output_path = os.path.splitext(filename)[0] + '.pdf'
+    output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
+
+    if not os.path.exists(output_path):
+        return jsonify({'error': 'Converted PDF not found.'}), 500
+
+    return jsonify({'download_url': f'/Upload_backend/{output_filename}'})
 
 if __name__ == '__main__':
     app.run(debug=True)
