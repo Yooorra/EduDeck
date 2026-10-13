@@ -3,19 +3,19 @@ from werkzeug.utils import secure_filename
 import os 
 import subprocess #this is for running the ffmpeg command in the terminal -EARL
 from PyPDF2 import PdfMerger
-
-# TODO TEAMMATE A: Import CORS from flask_cors here so the browser doesn't block us!
-
-# EARL NISHKY INSTALL FLASK AND OTHER THINGS BEFORE UPDATING BACKEND
+from flask_cors import CORS
 # into your terminal type this, pip install -r requirements.txt
+
+# DONE with teammate A
+#init
 app = Flask(__name__)
-# TODO TEAMMATE A: Initialize CORS here (e.g. CORS(app))
+CORS(app) 
 
 
 UPLOAD_FOLDER = 'Upload_backend'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# TODO TEAMMATE A: Add an os.makedirs check here to create the UPLOAD_FOLDER if it doesn't exist yet!
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 
 @app.route('/compress', methods=['POST'])
@@ -36,6 +36,8 @@ def upload_video():
         # and save it to a new file (e.g., `compressed_video.mp4`).
         # Make sure to update the download_url below to point to your NEW compressed file!
         # 
+
+        
     #ffmpeg command to compress the video with good quality -EARL
     output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
