@@ -51,19 +51,19 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <!-- Home -->
-            <a href="#" class="active">
+            <a href="#" class="sidebar-link active" id="nav-home-btn" title="Dashboard">
                 <img src="icons/home.svg" alt="Home">
             </a>
             <!-- Calendar -->
-            <a href="#">
+            <a href="#" class="sidebar-link" id="nav-calendar-btn" title="Calendar">
                 <img src="icons/calendar.svg" alt="Calendar">
             </a>
             <!-- Folder -->
-            <a href="#">
+            <a href="#" class="sidebar-link" id="nav-folder-btn" title="Folder">
                 <img src="icons/folder.svg" alt="Folder">
             </a>
             <!-- Settings -->
-            <a href="#">
+            <a href="#" class="sidebar-link" id="nav-settings-btn" title="Settings">
                 <img src="icons/setting.svg" alt="Settings">
             </a>
         </aside>
@@ -72,7 +72,7 @@
         <div class="content-area">
             <!-- Dashboard Header -->
             <header class="dashboard-header">
-                <h1>DASHBOARD</h1>
+                <h1 id="page-title">DASHBOARD</h1>
                 <!-- Status Badge -->
                 <div class="status-badge offline">
                     <img src="icons/offline.svg" alt="Offline Mode">
@@ -84,8 +84,8 @@
                 </div>
             </header>
 
-            <!-- Widgets Grid -->
-            <main class="dashboard-grid">
+            <!-- Widgets Grid (Dashboard View) -->
+            <main class="dashboard-grid" id="dashboard-view">
                 <section class="widget scheduler">
                     <!-- Widget Header -->
                     <div class="widget-header">
@@ -225,18 +225,64 @@
                         <h2>VIDEO COMPRESSOR</h2>
                     </div>
 
-                    <!-- Upload Zone -->
-                    <div class="upload-zone" id="video-upload-zone">
-                        <img src="icons/file.svg" alt="File Icon" class="upload-icon">
-                        <p class="upload-text" id="video-upload-text">Drag & Drop Your<br>Video File Here</p>
-                        <span class="upload-subtext">Max 5GB</span>
-                        <button class="browse-btn" id="video-browse-btn">or Browse Files</button>
-                        
-                        <input type="file" class="file-input hidden" id="video-file-input" accept="video/*">
+                    <!-- VIEW 1: Upload & Destination View -->
+                    <div class="video-view active-view" id="video-upload-view">
+                        <div class="upload-zone" id="video-upload-zone">
+                            <img src="icons/file.svg" alt="File Icon" class="upload-icon">
+                            <p class="upload-text" id="video-upload-text">Drag & Drop Your<br>Video File Here</p>
+                            <span class="upload-subtext">Max 5GB</span>
+                            <button class="browse-btn" id="video-browse-btn">or Browse Files</button>
+                            <input type="file" class="file-input hidden" id="video-file-input" accept="video/*">
+                        </div>
+
+                        <!-- Choose where the compressed file appears (Click to open file manager) -->
+                        <div class="video-dest-box" id="video-dest-box">
+                            <div class="video-dest-info">
+                                <span class="video-dest-label">Save Location:</span>
+                                <div class="video-dest-badge" id="video-dest-badge" title="Click to choose a folder">
+                                    <img src="icons/folder.svg" alt="Folder" class="video-dest-icon">
+                                    <span id="video-dest-display">Upload_backend/</span>
+                                </div>
+                            </div>
+                            <button type="button" class="video-dest-browse-btn" id="btn-browse-dest-folder" title="Open File Manager to choose folder">
+                                <img src="icons/folder.svg" alt="" class="video-dest-btn-icon">
+                                <span>Browse...</span>
+                            </button>
+                            <!-- Hidden directory input for fallback folder selection -->
+                            <input type="file" id="video-dest-folder-input" webkitdirectory directory class="hidden">
+                        </div>
+
+                        <button class="compress-btn" id="video-compress-btn">COMPRESS NOW</button>
                     </div>
 
-                    <!-- Compress Button -->
-                    <button class="compress-btn" id="video-compress-btn">COMPRESS NOW</button>
+                    <!-- VIEW 2: Loading / Compressing Screen -->
+                    <div class="video-view hidden-view" id="video-loading-view">
+                        <div class="video-loading-box">
+                            <div class="video-spinner"></div>
+                            <div class="video-loading-title">Compressing Video...</div>
+                            <div class="video-loading-subtext">FFmpeg is working on your file. Please wait...</div>
+                            <div class="video-loading-progress-bar">
+                                <div class="video-loading-progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW 3: Finished / Result Screen -->
+                    <div class="video-view hidden-view" id="video-result-view">
+                        <div class="video-result-box">
+                            <div class="video-result-title">✓ Compression Finished!</div>
+                            <div class="video-result-stats" id="video-result-stats">
+                                <!-- Stats injected by JS -->
+                            </div>
+                            <span class="video-result-badge" id="video-saved-badge">Saved 0%</span>
+                            <div class="video-result-location" id="video-result-location">
+                                Saved inside: <code>Upload_backend/</code>
+                            </div>
+                        </div>
+
+                        <button class="compress-btn" id="video-download-btn" style="background-color: #16a34a;">DOWNLOAD COMPRESSED FILE</button>
+                        <button class="video-secondary-btn" id="video-compress-another-btn">Compress Another Video</button>
+                    </div>
                 </section>
 
                 <!-- Document Tools Widget -->
@@ -338,6 +384,68 @@
                         </div>
                     </template>
                 </section>
+            </main>
+
+            <!-- Calendar Section View (Smoothly replaces Dashboard Cards) -->
+            <main class="calendar-page-view hidden" id="calendar-page-view">
+                <div class="calendar-page-layout">
+                    <!-- Left: Full Monthly Calendar -->
+                    <section class="widget cal-page-widget">
+                        <div class="widget-header">
+                            <h2>MONTHLY CALENDAR</h2>
+                            <div class="cal-header-actions">
+                                <button type="button" class="cal-nav-btn" id="cal-page-prev-btn" title="Previous Month">&lt;</button>
+                                <span class="cal-month-heading" id="cal-page-month-heading">October 2026</span>
+                                <button type="button" class="cal-nav-btn" id="cal-page-next-btn" title="Next Month">&gt;</button>
+                                <button type="button" class="cal-today-btn" id="cal-page-today-btn">Today</button>
+                            </div>
+                        </div>
+
+                        <div class="cal-page-table">
+                            <div class="cal-weekdays-grid">
+                                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                            </div>
+                            <div class="cal-days-grid" id="cal-page-days-grid">
+                                <!-- Days injected dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="cal-legend-bar">
+                            <div class="cal-legend-item">
+                                <span class="cal-legend-dot dot-doing"></span>
+                                <span>Doing (Today)</span>
+                            </div>
+                            <div class="cal-legend-item">
+                                <span class="cal-legend-dot dot-scheduled"></span>
+                                <span>Scheduled</span>
+                            </div>
+                            <div class="cal-legend-item">
+                                <span class="cal-legend-dot dot-overdue"></span>
+                                <span>Overdue</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Right: Schedules from Scheduler -->
+                    <section class="widget cal-schedules-widget">
+                        <div class="widget-header">
+                            <h2>SCHEDULES FROM SCHEDULER</h2>
+                            <span class="schedules-counter-badge" id="schedules-counter-badge">0 Tasks</span>
+                        </div>
+
+                        <!-- Filter Status Bar -->
+                        <div class="schedules-filter-row">
+                            <span class="schedules-filter-text" id="schedules-filter-text">All Scheduled Tasks</span>
+                            <button type="button" class="schedules-reset-btn hidden" id="schedules-reset-btn">Show All</button>
+                        </div>
+
+                        <!-- Schedules Container -->
+                        <div class="schedules-card-list" id="schedules-card-list">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </section>
+                </div>
             </main>
         </div>
     </div>

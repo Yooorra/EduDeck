@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 from werkzeug.utils import secure_filename 
 import os 
 import subprocess # this is for running the ffmpeg command in the terminal -EARL
-import sqlite3
 from PyPDF2 import PdfMerger
 from flask_cors import CORS
 
@@ -29,6 +28,15 @@ def upload_video():
     file.save(input_path)
     
         
+    # =========================================================================
+    # TODO EARL & NISHKY: CUSTOM SAVE LOCATION FROM FRONTEND
+    # The front-end now sends the folder path the user typed in the UI!
+    # To save the compressed video into their folder instead of Upload_backend:
+    #   dest_folder = request.form.get('dest_folder', app.config['UPLOAD_FOLDER'])
+    #   if not os.path.exists(dest_folder): os.makedirs(dest_folder)
+    #   output_path = os.path.join(dest_folder, output_filename)
+    # =========================================================================
+
     #ffmpeg command to compress the video with good quality -EARL
     output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
@@ -42,14 +50,14 @@ def upload_video():
     ]
     result = subprocess.run(command, capture_output=True, text=True)
 
-    #If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
-     if result.returncode != 0:
+    # If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
+    if result.returncode != 0:
         print(result.stderr)
         return 'Compression failed', 500
     
     # ======================================================================
 
-     return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4')
+    return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4')
 
 # pdf merger
 @app.route('/merge', methods=['POST'])
@@ -126,101 +134,6 @@ def convert_document():
         return jsonify({'error': 'Converted PDF not found.'}), 500
 
     return jsonify({'download_url': f'/Upload_backend/{output_filename}'})
-
-# =========================================================================
-# SQLITE DATABASE & AUTHENTICATION (Login & Register)
-# =========================================================================
-DB_NAME = 'students.db'
-
-def init_db():
-    """Initializes the local SQLite database for student accounts."""
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
-            )
-        ''')
-        # Insert default demo student account if empty
-        cursor.execute('SELECT COUNT(*) FROM users')
-        if cursor.fetchone()[0] == 0:
-            cursor.execute('''
-                INSERT INTO users (name, username, password)
-                VALUES (?, ?, ?)
-            ''', ('John Smith', '2024-0001', 'password123'))
-        conn.commit()
-
-# Run database setup on startup
-init_db()
-
-@app.after_request
-def allow_cors(response):
-    """Allows frontend JavaScript from file:// or other ports to connect without CORS errors."""
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS'
-    return response
-
-@app.route('/api/register', methods=['POST', 'OPTIONS'])
-def register_user():
-    if request.method == 'OPTIONS':
-        return ('', 204)
-
-    data = request.get_json() or {}
-    name = data.get('name', '').strip()
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
-
-    if not name or not username or not password:
-        return jsonify({'message': 'All fields are required.'}), 400
-
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute('INSERT INTO users (name, username, password) VALUES (?, ?, ?)',
-                           (name, username, password))
-            conn.commit()
-            return jsonify({'message': 'Account created successfully!', 'username': username}), 201
-    except sqlite3.IntegrityError:
-        return jsonify({'message': 'Student ID / Username is already registered.'}), 409
-    except Exception as e:
-        return jsonify({'message': f'Server error: {str(e)}'}), 500
-
-@app.route('/api/login', methods=['POST', 'OPTIONS'])
-def login_user():
-    if request.method == 'OPTIONS':
-        return ('', 204)
-
-    data = request.get_json() or {}
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
-
-    if not username or not password:
-        return jsonify({'message': 'Please enter both student ID and password.'}), 400
-
-    try:
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT name, username, password FROM users WHERE LOWER(username) = LOWER(?)', (username,))
-            user = cursor.fetchone()
-
-            if not user:
-                return jsonify({'message': 'Student ID not found. Please register first.'}), 404
-
-            db_name, db_username, db_password = user
-            if db_password != password:
-                return jsonify({'message': 'Incorrect password.'}), 401
-
-            return jsonify({
-                'message': 'Login successful!',
-                'name': db_name,
-                'username': db_username
-            }), 200
-    except Exception as e:
-        return jsonify({'message': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

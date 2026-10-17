@@ -474,83 +474,187 @@ if (videoUploadZone && videoFileInput) {
         }
     });
 
+    // =========================================================================
+    // VIDEO COMPRESSOR DYNAMIC VIEWS & SETUP
+    // =========================================================================
+    const videoUploadView = document.getElementById('video-upload-view');
+    const videoLoadingView = document.getElementById('video-loading-view');
+    const videoResultView = document.getElementById('video-result-view');
+    const videoDestBadge = document.getElementById('video-dest-badge');
+    const videoDestDisplay = document.getElementById('video-dest-display');
+    const btnBrowseDestFolder = document.getElementById('btn-browse-dest-folder');
+    const videoDestFolderInput = document.getElementById('video-dest-folder-input');
+    const videoResultStats = document.getElementById('video-result-stats');
+    const videoSavedBadge = document.getElementById('video-saved-badge');
+    const videoResultLocation = document.getElementById('video-result-location');
+    const videoDownloadBtn = document.getElementById('video-download-btn');
+    const videoCompressAnotherBtn = document.getElementById('video-compress-another-btn');
+
+    let currentCompressedBlob = null;
+    let currentCompressedFileName = 'compressed_video.mp4';
+    let selectedDestFolder = 'Upload_backend/';
+
+    // Opens the native OS File Manager / Folder Picker so users don't have to type paths
+    async function selectDestinationFolder() {
+        if (window.showDirectoryPicker) {
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                if (dirHandle && dirHandle.name) {
+                    selectedDestFolder = dirHandle.name + '/';
+                    if (videoDestDisplay) {
+                        videoDestDisplay.textContent = selectedDestFolder;
+                    }
+                }
+            } catch (err) {
+                // User cancelled or closed the picker without choosing
+                if (err.name !== 'AbortError') {
+                    console.warn('DirectoryPicker notice:', err);
+                    if (videoDestFolderInput) videoDestFolderInput.click();
+                }
+            }
+        } else if (videoDestFolderInput) {
+            // Fallback for browsers without showDirectoryPicker
+            videoDestFolderInput.click();
+        }
+    }
+
+    if (btnBrowseDestFolder) {
+        btnBrowseDestFolder.addEventListener('click', selectDestinationFolder);
+    }
+    if (videoDestBadge) {
+        videoDestBadge.addEventListener('click', selectDestinationFolder);
+    }
+
+    if (videoDestFolderInput) {
+        videoDestFolderInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                const relativePath = e.target.files[0].webkitRelativePath;
+                if (relativePath) {
+                    const topFolder = relativePath.split('/')[0];
+                    if (topFolder) {
+                        selectedDestFolder = topFolder + '/';
+                        if (videoDestDisplay) {
+                            videoDestDisplay.textContent = selectedDestFolder;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function switchVideoView(viewName) {
+        if (videoUploadView) {
+            videoUploadView.classList.toggle('active-view', viewName === 'upload');
+            videoUploadView.classList.toggle('hidden-view', viewName !== 'upload');
+        }
+        if (videoLoadingView) {
+            videoLoadingView.classList.toggle('active-view', viewName === 'loading');
+            videoLoadingView.classList.toggle('hidden-view', viewName !== 'loading');
+        }
+        if (videoResultView) {
+            videoResultView.classList.toggle('active-view', viewName === 'result');
+            videoResultView.classList.toggle('hidden-view', viewName !== 'result');
+        }
+    }
+
+    // Reset button to compress another video
+    if (videoCompressAnotherBtn) {
+        videoCompressAnotherBtn.addEventListener('click', () => {
+            selectedVideoFile = null;
+            if (videoFileInput) videoFileInput.value = '';
+            if (videoUploadText) videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
+            currentCompressedBlob = null;
+            switchVideoView('upload');
+        });
+    }
+
+    // Download button handler when on the Result Screen
+    if (videoDownloadBtn) {
+        videoDownloadBtn.addEventListener('click', () => {
+            if (!currentCompressedBlob) return;
+            const downloadUrl = window.URL.createObjectURL(currentCompressedBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.style.display = 'none';
+            downloadLink.href = downloadUrl;
+            downloadLink.download = currentCompressedFileName;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            setTimeout(() => {
+                downloadLink.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+            }, 2000);
+        });
+    }
+
     videoCompressBtn.addEventListener('click', () => {
         if (!selectedVideoFile) {
             alert("Please select or drop a video file first!");
             return;
         }
 
-        videoCompressBtn.textContent = "COMPRESSING...";
-        videoCompressBtn.style.opacity = "0.7";
-        videoCompressBtn.style.cursor = "not-allowed";
-
         // =========================================================================
-        // HEY DONOBARN, EARL, AND NISHKY! THIS IS WHERE YOU CONNECT YOUR PYTHON CODE.
+        // HEY EARL & NISHKY! (FRONT-END VIDEO COMPRESSOR CONNECTION)
         // =========================================================================
-        // Right now, this button just pretends to work. 
-        // When you are ready to make it actually compress videos using Python, follow these steps:
+        // 1. Loading Screen: The frontend now swaps into a loading screen while
+        //    Python is running FFmpeg, so the user knows it's working!
+        // 2. Setting Save Folder: The user can now click "Browse..." to pick where
+        //    to save the file (opened through native file manager) instead of typing!
+        //    Defaults to 'Upload_backend/'. You can read this in Python with:
+        //    dest_folder = request.form.get('dest_folder', 'Upload_backend')
+        // 3. Finished Screen: When Python finishes and returns the blob/file,
+        //    the frontend displays the size savings and exact save location,
+        //    along with a Download button and a Compress Another button!
+        // =========================================================================
 
-        // STEP 1: Delete the "/*" and "*/" symbols that are hiding the code below.
-        // STEP 2: Change the web address ('http://127.0.0.1:5000/compress') to match your Python server's address.
-        // STEP 3: Delete the "FAKE DELAY" block at the very bottom.
+        // Switch to the Loading Screen view
+        switchVideoView('loading');
 
-        // This bundles the video file into a package so Python can read it.
+        const destFolder = selectedDestFolder || 'Upload_backend/';
+        const originalFileName = selectedVideoFile.name;
+
+        // Package the video file and destination folder to send to Python
         const formData = new FormData();
         formData.append('video_file', selectedVideoFile);
+        formData.append('dest_folder', destFolder);
 
-        fetch('http://127.0.0.1:5000/compress', { // Put your Python server link here!
+        fetch('http://127.0.0.1:5000/compress', {
             method: 'POST',
             body: formData
         })
-            //removed the entire retrieval code here
-            //changed it to return the blob instead of json
             .then(response => {
                 if (!response.ok) {
-                    //I used response.status so it will return the error code, but I can change it to text
-                    throw new Error('Server Returned ${response.status}');
+                    throw new Error(`Server returned error status: ${response.status}`);
                 }
-                //video file (blob) instead of text (json)
                 return response.blob();
             })
-            .then (blob => {
-                //the file sizes in MB, will show how much ffmpeg saved - EARL
+            .then(blob => {
+                // Calculate file size statistics
                 const originalMB = (selectedVideoFile.size / 1024 / 1024).toFixed(2);
                 const compressedMB = (blob.size / 1024 / 1024).toFixed(2);
                 const savedPercent = (((selectedVideoFile.size - blob.size) / selectedVideoFile.size) * 100).toFixed(0);
 
-                //temporary URL for the compressed video file
-                const downloadUrl = URL.createObjectURL(blob);
-                //temporary link to download the compressed video
-                const downloadLink = document.createElement('a');
-                
-                //misc 
-                downloadLink.href = downloadUrl;
-                downloadLink.download = 'compressed_video.mp4';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
+                currentCompressedBlob = blob;
+                currentCompressedFileName = 'compressed_' + originalFileName;
 
-                //remove and release the temporary link and URL after download
-                downloadLink.remove();
-                URL.revokeObjectURL(downloadUrl);
+                // Update the result screen UI
+                if (videoResultStats) {
+                    videoResultStats.innerHTML = `Original: <strong>${originalMB} MB</strong> → Compressed: <strong style="color: #16a34a;">${compressedMB} MB</strong>`;
+                }
+                if (videoSavedBadge) {
+                    videoSavedBadge.textContent = `Saved ${savedPercent}%`;
+                }
+                if (videoResultLocation) {
+                    videoResultLocation.innerHTML = `Saved in: <code>${destFolder}${currentCompressedFileName}</code>`;
+                }
 
-                videoCompressBtn.textContent = "COMPRESS";
-                videoCompressBtn.style.opacity = "1";
-                videoCompressBtn.style.cursor = "pointer";
-
-                videoUploadText.innerHTML = "Drag & drop your<br>video file here";
-                selectedVideoFile = null;
-                videoFileInput.value = '';
-                
-                // I change this so the alert will show the original and compressed file sizes - EARL
-                alert(`Video compressed successfully!\nOriginal: ${originalMB} MB\nCompressed: ${compressedMB} MB`);
+                // Show the Finished Result Screen
+                switchVideoView('result');
             })
             .catch(error => {
                 console.error('Compression Error:', error);
-                alert("An error occurred during compression. Please try again.");
-                videoCompressBtn.textContent = "COMPRESS NOW";
-                videoCompressBtn.style.opacity = "1";
-                videoCompressBtn.style.cursor = "pointer";
-            })
+                alert("An error occurred during compression. Make sure the Python server is running.");
+                switchVideoView('upload');
+            });
 
     });
 }
@@ -690,7 +794,7 @@ if (loggedInUserRaw) {
         if (userAvatarElem && loggedInUser.name) {
             // Generate initials (e.g., "Juan Dela Cruz" -> "JD")
             const parts = loggedInUser.name.trim().split(' ');
-            const initials = parts.length > 1 
+            const initials = parts.length > 1
                 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
                 : parts[0].substring(0, 2).toUpperCase();
             userAvatarElem.textContent = initials;
@@ -705,5 +809,353 @@ if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('currentUser');
         window.location.href = 'login_page.html';
+    });
+}
+
+/* ========================================================================= */
+/* 12. Calendar View Page Switching & Schedule Sync */
+/* ========================================================================= */
+// Navigation elements
+const navHomeBtn = document.getElementById('nav-home-btn');
+const navCalendarBtn = document.getElementById('nav-calendar-btn');
+const pageTitleElem = document.getElementById('page-title');
+const dashboardView = document.getElementById('dashboard-view');
+const calendarPageView = document.getElementById('calendar-page-view');
+
+// Calendar Page View elements
+const calPagePrevBtn = document.getElementById('cal-page-prev-btn');
+const calPageNextBtn = document.getElementById('cal-page-next-btn');
+const calPageTodayBtn = document.getElementById('cal-page-today-btn');
+const calPageMonthHeading = document.getElementById('cal-page-month-heading');
+const calPageDaysGrid = document.getElementById('cal-page-days-grid');
+const schedulesCounterBadge = document.getElementById('schedules-counter-badge');
+const schedulesFilterText = document.getElementById('schedules-filter-text');
+const schedulesResetBtn = document.getElementById('schedules-reset-btn');
+const schedulesCardList = document.getElementById('schedules-card-list');
+
+let calPageCurrentMonth = new Date().getMonth();
+let calPageCurrentYear = new Date().getFullYear();
+let calPageSelectedDay = null;
+
+// 1. Gathers all tasks from the Scheduler widget that have a set due date
+function getScheduledTasksFromScheduler() {
+    const tasks = [];
+    const scheduler = document.getElementById('scheduler-container');
+    if (!scheduler) return tasks;
+
+    const categories = scheduler.querySelectorAll('.task-category');
+    categories.forEach(category => {
+        const catTitleElem = category.querySelector('.category-title');
+        const categoryName = catTitleElem ? catTitleElem.textContent.trim() : 'Scheduler';
+
+        const taskCards = category.querySelectorAll('.task-card');
+        taskCards.forEach(card => {
+            const titleElem = card.querySelector('.task-title');
+            const dueElem = card.querySelector('.task-due');
+            const statusElem = card.querySelector('.status-text');
+            const colorElem = card.querySelector('.card-color-line');
+            const checkbox = card.querySelector('.task-checkbox');
+
+            const title = titleElem ? titleElem.textContent.trim() : 'Untitled Task';
+            const due = dueElem ? dueElem.textContent.trim() : 'No Due Date';
+            const status = statusElem ? statusElem.textContent.trim() : 'Not Scheduled';
+            const color = colorElem ? (colorElem.style.backgroundColor || '#f57c00') : '#f57c00';
+            const isCompleted = checkbox ? checkbox.checked : false;
+
+            // Only grab tasks that have a scheduled date
+            if (due && due !== 'No Due Date') {
+                tasks.push({
+                    title,
+                    category: categoryName,
+                    due,
+                    status,
+                    color,
+                    isCompleted
+                });
+            }
+        });
+    });
+
+    return tasks;
+}
+
+// 2. Render Calendar Grid & Schedules List
+function renderCalendarPageView() {
+    if (!calPageMonthHeading || !calPageDaysGrid) return;
+
+    const monthName = monthNames[calPageCurrentMonth];
+    calPageMonthHeading.textContent = `${monthName} ${calPageCurrentYear}`;
+    const monthShort = monthName.substring(0, 3);
+
+    // Fetch current tasks with dates from the scheduler
+    const allSchedules = getScheduledTasksFromScheduler();
+
+    // Reset grid
+    calPageDaysGrid.innerHTML = '';
+
+    const firstDayIndex = new Date(calPageCurrentYear, calPageCurrentMonth, 1).getDay();
+    const daysInMonth = new Date(calPageCurrentYear, calPageCurrentMonth + 1, 0).getDate();
+    const today = new Date();
+
+    // Leading empty cells
+    for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.classList.add('cal-day-cell', 'empty');
+        calPageDaysGrid.appendChild(emptyCell);
+    }
+
+    // Month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.classList.add('cal-day-cell');
+        dayCell.textContent = day;
+
+        const isToday = (
+            day === today.getDate() &&
+            calPageCurrentMonth === today.getMonth() &&
+            calPageCurrentYear === today.getFullYear()
+        );
+        if (isToday) {
+            dayCell.classList.add('today');
+        }
+
+        if (calPageSelectedDay === day) {
+            dayCell.classList.add('selected');
+        }
+
+        // Check if any schedule matches this day (e.g. "Oct 17")
+        const datePrefix = `${monthShort} ${day}`;
+        const tasksForDay = allSchedules.filter(t => t.due && t.due.startsWith(datePrefix));
+
+        if (tasksForDay.length > 0) {
+            dayCell.classList.add('has-tasks');
+            dayCell.title = `${tasksForDay.length} task${tasksForDay.length > 1 ? 's' : ''} scheduled`;
+
+            const dotsContainer = document.createElement('div');
+            dotsContainer.classList.add('cal-day-dots');
+
+            const dotCount = Math.min(tasksForDay.length, 3);
+            for (let d = 0; d < dotCount; d++) {
+                const dot = document.createElement('span');
+                dot.classList.add('cal-dot');
+                if (tasksForDay[d] && tasksForDay[d].color && tasksForDay[d].color !== '#dadce0') {
+                    dot.style.backgroundColor = tasksForDay[d].color;
+                }
+                dotsContainer.appendChild(dot);
+            }
+            dayCell.appendChild(dotsContainer);
+        }
+
+        // Clicking a day filters the schedule list on the right
+        dayCell.addEventListener('click', () => {
+            if (calPageSelectedDay === day) {
+                calPageSelectedDay = null; // Toggle off
+            } else {
+                calPageSelectedDay = day;
+            }
+            renderCalendarPageView();
+        });
+
+        calPageDaysGrid.appendChild(dayCell);
+    }
+
+    // Render schedule cards on the right
+    renderSchedulesList(allSchedules, monthShort);
+}
+
+// 3. Render the schedules card list on the right
+function renderSchedulesList(allSchedules, monthShort) {
+    if (!schedulesCardList) return;
+    schedulesCardList.innerHTML = '';
+
+    let displayedTasks = allSchedules;
+
+    if (calPageSelectedDay !== null) {
+        const datePrefix = `${monthShort} ${calPageSelectedDay}`;
+        displayedTasks = allSchedules.filter(t => t.due && t.due.startsWith(datePrefix));
+
+        if (schedulesFilterText) {
+            schedulesFilterText.textContent = `Showing schedules for ${monthShort} ${calPageSelectedDay}`;
+        }
+        if (schedulesResetBtn) {
+            schedulesResetBtn.classList.remove('hidden');
+        }
+    } else {
+        if (schedulesFilterText) {
+            schedulesFilterText.textContent = `All Scheduled Tasks (${allSchedules.length})`;
+        }
+        if (schedulesResetBtn) {
+            schedulesResetBtn.classList.add('hidden');
+        }
+    }
+
+    if (schedulesCounterBadge) {
+        schedulesCounterBadge.textContent = `${displayedTasks.length} Task${displayedTasks.length === 1 ? '' : 's'}`;
+    }
+
+    // Empty state
+    if (displayedTasks.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.classList.add('schedules-empty-state');
+
+        if (calPageSelectedDay !== null) {
+            emptyDiv.innerHTML = `
+                <div class="empty-icon-circle">
+                    <img src="icons/calendar.svg" alt="Calendar" class="empty-cal-icon">
+                </div>
+                <h3>No Tasks on this Date</h3>
+                <p>No tasks from your scheduler are scheduled for ${monthShort} ${calPageSelectedDay}.</p>
+                <button type="button" class="schedules-reset-btn" id="empty-clear-filter-btn" style="text-decoration:none; font-weight:700;">Show All Scheduled Tasks</button>
+            `;
+            const emptyClearBtn = emptyDiv.querySelector('#empty-clear-filter-btn');
+            if (emptyClearBtn) {
+                emptyClearBtn.addEventListener('click', () => {
+                    calPageSelectedDay = null;
+                    renderCalendarPageView();
+                });
+            }
+        } else {
+            emptyDiv.innerHTML = `
+                <div class="empty-icon-circle">
+                    <img src="icons/calendar.svg" alt="Calendar" class="empty-cal-icon">
+                </div>
+                <h3>No Scheduled Tasks</h3>
+                <p>Tasks with a set date in your Scheduler will smoothly appear here.</p>
+                <button type="button" class="cal-go-scheduler-btn" id="btn-goto-scheduler">
+                    <img src="icons/plus.svg" alt="" class="cal-btn-icon">
+                    Open Scheduler
+                </button>
+            `;
+            const gotoSchedulerBtn = emptyDiv.querySelector('#btn-goto-scheduler');
+            if (gotoSchedulerBtn) {
+                gotoSchedulerBtn.addEventListener('click', () => {
+                    switchToDashboard(true);
+                });
+            }
+        }
+
+        schedulesCardList.appendChild(emptyDiv);
+        return;
+    }
+
+    // Render each schedule card
+    displayedTasks.forEach(task => {
+        const card = document.createElement('div');
+        card.classList.add('sched-item-card');
+
+        let statusClass = 'scheduled';
+        const stLower = task.status.toLowerCase();
+        if (stLower.includes('doing')) statusClass = 'doing';
+        else if (stLower.includes('overdue')) statusClass = 'overdue';
+
+        card.innerHTML = `
+            <div class="sched-color-bar" style="background-color: ${task.color || '#f57c00'};"></div>
+            <div class="sched-item-body">
+                <div class="sched-top-meta">
+                    <span class="sched-cat-tag">${task.category}</span>
+                    <span class="sched-status-tag ${statusClass}">${task.status}</span>
+                </div>
+                <h4 class="sched-task-name ${task.isCompleted ? 'completed' : ''}">${task.title}</h4>
+                <div class="sched-bottom-meta">
+                    <img src="icons/calendar.svg" alt="Due" class="sched-due-icon">
+                    <span>${task.due}</span>
+                </div>
+            </div>
+        `;
+
+        schedulesCardList.appendChild(card);
+    });
+}
+
+// 4. View Switcher functions
+function switchToCalendar() {
+    if (navHomeBtn) navHomeBtn.classList.remove('active');
+    if (navCalendarBtn) navCalendarBtn.classList.add('active');
+
+    if (pageTitleElem) pageTitleElem.textContent = 'CALENDAR';
+
+    if (dashboardView) dashboardView.classList.add('hidden');
+    if (calendarPageView) calendarPageView.classList.remove('hidden');
+
+    calPageSelectedDay = null;
+    renderCalendarPageView();
+}
+
+function switchToDashboard(highlightScheduler = false) {
+    if (navCalendarBtn) navCalendarBtn.classList.remove('active');
+    if (navHomeBtn) navHomeBtn.classList.add('active');
+
+    if (pageTitleElem) pageTitleElem.textContent = 'DASHBOARD';
+
+    if (calendarPageView) calendarPageView.classList.add('hidden');
+    if (dashboardView) dashboardView.classList.remove('hidden');
+
+    if (highlightScheduler) {
+        const schedulerCard = document.querySelector('.widget.scheduler');
+        if (schedulerCard) {
+            schedulerCard.classList.remove('highlight-pulse');
+            void schedulerCard.offsetWidth; // trigger reflow
+            schedulerCard.classList.add('highlight-pulse');
+            schedulerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => {
+                schedulerCard.classList.remove('highlight-pulse');
+            }, 2500);
+        }
+    }
+}
+
+// 5. Wire up Event Listeners
+if (navCalendarBtn) {
+    navCalendarBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchToCalendar();
+    });
+}
+
+if (navHomeBtn) {
+    navHomeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchToDashboard();
+    });
+}
+
+if (calPagePrevBtn) {
+    calPagePrevBtn.addEventListener('click', () => {
+        calPageCurrentMonth--;
+        if (calPageCurrentMonth < 0) {
+            calPageCurrentMonth = 11;
+            calPageCurrentYear--;
+        }
+        calPageSelectedDay = null;
+        renderCalendarPageView();
+    });
+}
+
+if (calPageNextBtn) {
+    calPageNextBtn.addEventListener('click', () => {
+        calPageCurrentMonth++;
+        if (calPageCurrentMonth > 11) {
+            calPageCurrentMonth = 0;
+            calPageCurrentYear++;
+        }
+        calPageSelectedDay = null;
+        renderCalendarPageView();
+    });
+}
+
+if (calPageTodayBtn) {
+    calPageTodayBtn.addEventListener('click', () => {
+        const now = new Date();
+        calPageCurrentMonth = now.getMonth();
+        calPageCurrentYear = now.getFullYear();
+        calPageSelectedDay = now.getDate();
+        renderCalendarPageView();
+    });
+}
+
+if (schedulesResetBtn) {
+    schedulesResetBtn.addEventListener('click', () => {
+        calPageSelectedDay = null;
+        renderCalendarPageView();
     });
 }
