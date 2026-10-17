@@ -29,14 +29,6 @@ def upload_video():
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(input_path)
     
-    # =========================================================================
-    # TODO TEAMMATE B: THE COMPRESSOR!
-    # Right now, we just save the original file. 
-        # Write Python code here to use FFmpeg to compress the video at `input_path` 
-        # and save it to a new file (e.g., `compressed_video.mp4`).
-        # Make sure to update the download_url below to point to your NEW compressed file!
-        # 
-
         
     #ffmpeg command to compress the video with good quality -EARL
     output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
@@ -54,13 +46,18 @@ def upload_video():
     #If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
     if result.returncode != 0:
         print(result.stderr)
-        return 'Compression failed', 500
+        return jsonify({'error': 'Compression failed'}), 500
     
     # ======================================================================
 
-    return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4') #I changed this to send the compressed video back to the user instead of just returning a download URL - EARL
+    download_url = f"/uploads/{output_filename}"
+    return jsonify({
+        'success': True,
+        'message': 'Video compressed successfully!',
+        'download_url': download_url
+    }), 200
 
-#document merger 
+# pdf merger
 @app.route('/merge', methods=['POST'])
 def merge_documents():
     files = request.files.getlist('doc_files')
