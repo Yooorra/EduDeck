@@ -50,12 +50,7 @@ def upload_video():
     
     # ======================================================================
 
-    download_url = f"/uploads/{output_filename}"
-    return jsonify({
-        'success': True,
-        'message': 'Video compressed successfully!',
-        'download_url': download_url
-    }), 200
+     return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4')
 
 # pdf merger
 @app.route('/merge', methods=['POST'])
