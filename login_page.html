@@ -4,46 +4,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Student Portal</title>
+    <title>Login & Register - Student Portal</title>
 
-    <!-- We can re-use the same fonts and CSS file from the dashboard -->
+    <!-- Font & Design CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="dashboard_designs.css">
 </head>
 
 <body>
 
-    <!-- This will be the main box in the center of the screen -->
     <div class="login-wrapper">
-        <div class="login-box widget">
+        <div class="login-box">
 
-            <!-- Logo and Title area -->
-            <div class="login-header">
-                <h2>Welcome Back!</h2>
-                <p>Please login to your account</p>
+            <!-- BulSU Brand Header -->
+            <div class="login-brand">
+                <img src="icons/BULSU.svg" alt="BulSU Logo" class="login-brand-logo">
+                <h1>EduDeck Student Portal</h1>
+                <p id="auth-subtitle">Sign in to access your dashboard</p>
             </div>
 
-            <!-- The Form -->
+            <!-- Tab Switcher (Sign In vs Register) -->
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn active" id="tab-login-btn">Sign In</button>
+                <button type="button" class="auth-tab-btn" id="tab-register-btn">Register</button>
+            </div>
+
+            <!-- Notification Feedback Banner (Shows error or success messages) -->
+            <div id="auth-alert" class="auth-alert"></div>
+
+            <!-- 1. SIGN IN FORM -->
             <form id="login-form">
-                <!-- Username -->
                 <div class="input-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" placeholder="Enter your student ID">
+                    <label for="login-username">Student ID / Username</label>
+                    <input type="text" id="login-username" placeholder="e.g. 2024-0001" required
+                        autocomplete="username">
                 </div>
 
-                <!-- Password -->
                 <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Enter your password">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password" required
+                        autocomplete="current-password">
                 </div>
 
-                <!-- Login Button -->
-                <button type="button" class="compress-btn" id="login-btn">LOGIN</button>
+                <div class="auth-extra-row">
+                    <label>
+                        <input type="checkbox" id="remember-me"> Remember me
+                    </label>
+                    <a href="#" id="forgot-password-link"
+                        onclick="alert('For this prototype, please use the demo credentials below or register a new account!'); return false;">Forgot
+                        password?</a>
+                </div>
+
+                <button type="submit" class="auth-submit-btn" id="login-submit-btn">SIGN IN</button>
+
+                <div class="auth-footer">
+                    Don't have an account? <a id="switch-to-register">Create an account</a>
+                </div>
             </form>
+
+            <!-- 2. REGISTER FORM (Hidden by default) -->
+            <form id="register-form" style="display: none;">
+                <div class="input-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" placeholder="e.g. Juan Dela Cruz" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-username">Student ID / Username</label>
+                    <input type="text" id="reg-username" placeholder="e.g. 2024-0002" required autocomplete="username">
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" placeholder="Create a password" required
+                        autocomplete="new-password">
+                </div>
+
+                <div class="input-group">
+                    <label for="reg-confirm-password">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" placeholder="Re-enter your password" required
+                        autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="auth-submit-btn" id="register-submit-btn">CREATE ACCOUNT</button>
+
+                <div class="auth-footer">
+                    Already have an account? <a id="switch-to-login">Sign in</a>
+                </div>
+            </form>
+
+            <!-- Demo Account Hint Box for the Prototype -->
+            <div class="demo-hint-box">
+                <strong>Prototype Demo Account:</strong><br>
+                Student ID: <code>2024-0001</code> | Password: <code>password123</code><br>
+                <span style="font-size: 11px; color: #a16207;">(Or register any new account to test!)</span>
+            </div>
 
         </div>
     </div>
 
+    <!-- Logic Script -->
+    <script src="login_logic.js"></script>
 </body>
 
 </html>

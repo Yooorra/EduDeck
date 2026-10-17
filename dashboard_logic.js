@@ -672,3 +672,38 @@ if (dashboardGrid) {
         handle: '.widget-header', // Optional: if you only want the header to be the drag handle. (Removing this makes the whole card draggable)
     });
 }
+
+/* ========================================================================= */
+/* 11. User Session & Logout */
+/* ========================================================================= */
+const loggedInUserRaw = localStorage.getItem('currentUser');
+if (loggedInUserRaw) {
+    try {
+        const loggedInUser = JSON.parse(loggedInUserRaw);
+        const userNameElem = document.querySelector('.user-profile .user-name');
+        const userAvatarElem = document.querySelector('.user-profile .avatar');
+
+        if (userNameElem && loggedInUser.name) {
+            userNameElem.textContent = loggedInUser.name;
+        }
+
+        if (userAvatarElem && loggedInUser.name) {
+            // Generate initials (e.g., "Juan Dela Cruz" -> "JD")
+            const parts = loggedInUser.name.trim().split(' ');
+            const initials = parts.length > 1 
+                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                : parts[0].substring(0, 2).toUpperCase();
+            userAvatarElem.textContent = initials;
+        }
+    } catch (e) {
+        console.error('Error loading user session:', e);
+    }
+}
+
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login_page.html';
+    });
+}
