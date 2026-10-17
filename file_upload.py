@@ -44,9 +44,9 @@ def upload_video():
     result = subprocess.run(command, capture_output=True, text=True)
 
     #If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
-    if result.returncode != 0:
+     if result.returncode != 0:
         print(result.stderr)
-        return jsonify({'error': 'Compression failed'}), 500
+        return 'Compression failed', 500
     
     # ======================================================================
 
