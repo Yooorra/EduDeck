@@ -22,7 +22,8 @@ const noteTemplate = document.getElementById('note-card-template');
 function createNewNote() {
     const newNoteFragment = noteTemplate.content.cloneNode(true);
     const newNoteCard = newNoteFragment.querySelector('.task-card');
-    enableColorPicker(newNoteCard); notesContainer.prepend(newNoteCard);
+    enableColorPicker(newNoteCard);
+    notesContainer.prepend(newNoteCard);
 }
 
 const addNotePlusBtn = document.querySelector('.quick-notes .add-btn');
@@ -167,6 +168,7 @@ confirmButtons.forEach(btn => {
             }
         });
 
+        // wait for the shrink animation to finish, then turn remove mode off
         setTimeout(() => {
             widget.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
 
@@ -188,7 +190,7 @@ function enableDragAndDrop(container) {
 
 enableDragAndDrop(document.getElementById('notes-container'));
 
-/* 7. Calendar Engine */
+/* 7. Calendar Engine (the one that pops up when you click the bell) */
 const calendarView = document.querySelector('.scheduler-calendar-view');
 const schedulerMainView = document.querySelector('.scheduler-main-view');
 const daysGrid = document.getElementById('calendar-days');
@@ -225,6 +227,7 @@ function renderCalendar() {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+    // empty boxes before the 1st of the month
     for (let i = 0; i < firstDay; i++) {
         const emptyDiv = document.createElement('div');
         emptyDiv.classList.add('calendar-day', 'empty');
@@ -253,7 +256,7 @@ function renderCalendar() {
 if (prevBtn) {
     prevBtn.addEventListener('click', () => {
         daysGrid.classList.remove('slide-left', 'slide-right');
-        void daysGrid.offsetWidth; // trigger CSS reflow
+        void daysGrid.offsetWidth; // trick so the slide animation can play again
         daysGrid.classList.add('slide-right'); // slide animation
 
         currentMonth--;
@@ -273,6 +276,7 @@ if (nextBtn) {
     });
 }
 
+// clicking the "September 2026" text opens a list of years
 if (monthYearSelector && yearDropdown) {
     for (let y = 2024; y <= 2035; y++) {
         const yearOpt = document.createElement('div');
@@ -290,6 +294,7 @@ if (monthYearSelector && yearDropdown) {
         yearDropdown.classList.toggle('hidden');
     });
 
+    // clicking anywhere else closes the year list
     document.addEventListener('click', (e) => {
         if (!monthYearSelector.contains(e.target)) {
             yearDropdown.classList.add('hidden');
@@ -301,6 +306,7 @@ function updateTimeDisplay() {
     if (timeDisplayBtn) timeDisplayBtn.textContent = `${selectedHour}:${selectedMinute} ${selectedAmPm}`;
 }
 
+// building the hours / minutes / AM-PM lists for the time picker
 if (hoursCol && minutesCol && timeDisplayBtn) {
     for (let h = 1; h <= 12; h++) {
         let str = h < 10 ? "0" + h : "" + h;
@@ -350,6 +356,7 @@ if (hoursCol && minutesCol && timeDisplayBtn) {
         e.stopPropagation();
     });
 
+    // clicking anywhere else closes the time list
     document.addEventListener('click', (e) => {
         if (!timeDisplayBtn.contains(e.target) && !timeDropdown.contains(e.target)) {
             timeDropdown.classList.add('hidden');
@@ -357,11 +364,13 @@ if (hoursCol && minutesCol && timeDisplayBtn) {
     });
 }
 
+// runs when a task's bell button is clicked
 function openCalendarForTask(taskCard) {
     currentActiveTaskCard = taskCard;
     schedulerMainView.classList.add('hidden');
     calendarView.classList.remove('hidden');
 
+    // start fresh: this month, no date picked, 12:00 PM
     currentMonth = new Date().getMonth();
     currentYear = new Date().getFullYear();
     selectedDate = null;
@@ -405,6 +414,11 @@ if (confirmBtn) {
             const dueText = currentActiveTaskCard.querySelector('.task-due');
             if (dueText) dueText.textContent = formattedDate;
 
+            // remember the real date on the card, the Calendar page (section 12) reads these
+            currentActiveTaskCard.dataset.year = selectedDate.getFullYear();
+            currentActiveTaskCard.dataset.month = selectedDate.getMonth();
+            currentActiveTaskCard.dataset.day = selectedDate.getDate();
+
             const statusDot = currentActiveTaskCard.querySelector('.status-dot');
             const statusText = currentActiveTaskCard.querySelector('.status-text');
 
@@ -425,7 +439,7 @@ if (confirmBtn) {
             }
         }
 
-        calendarView.classList.add('hidden');
+        // go back to the task list
         calendarView.classList.add('hidden');
         schedulerMainView.classList.remove('hidden');
     });
@@ -438,235 +452,216 @@ const videoBrowseBtn = document.getElementById('video-browse-btn');
 const videoFileInput = document.getElementById('video-file-input');
 const videoCompressBtn = document.getElementById('video-compress-btn');
 
+// the 3 screens inside the video box: upload -> loading -> result
+const videoUploadView = document.getElementById('video-upload-view');
+const videoLoadingView = document.getElementById('video-loading-view');
+const videoResultView = document.getElementById('video-result-view');
+
+// "Save Location" part
+const destBadge = document.getElementById('video-dest-badge');
+const destText = document.getElementById('video-dest-display');
+const destBrowseBtn = document.getElementById('btn-browse-dest-folder');
+const destFolderInput = document.getElementById('video-dest-folder-input');
+
+// stuff on the result screen
+const resultStats = document.getElementById('video-result-stats');
+const resultBadge = document.getElementById('video-saved-badge');
+const resultLocation = document.getElementById('video-result-location');
+const downloadBtn = document.getElementById('video-download-btn');
+const compressAnotherBtn = document.getElementById('video-compress-another-btn');
+
 let selectedVideoFile = null;
+let compressedBlob = null;           // the compressed video Python sends back
+let compressedFileName = '';
+let destFolder = 'Upload_backend/';  // the folder name we send to Python
+let destFolderHandle = null;         // the folder itself (only Chrome / Edge give this)
 
-if (videoUploadZone && videoFileInput) {
-    videoBrowseBtn.addEventListener('click', () => {
-        videoFileInput.click();
-    });
+// swaps the screens. name is 'upload', 'loading' or 'result'
+function showVideoScreen(name) {
+    const screens = { upload: videoUploadView, loading: videoLoadingView, result: videoResultView };
 
-    videoFileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            selectedVideoFile = e.target.files[0];
-            videoUploadText.innerHTML = `<strong>Selected:</strong><br>${selectedVideoFile.name}`;
-        }
-    });
-
-    videoUploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        videoUploadZone.style.backgroundColor = '#fff0e6'; videoUploadZone.style.borderColor = 'var(--school-orange)';
-    });
-
-    videoUploadZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        videoUploadZone.style.backgroundColor = 'transparent';
-        videoUploadZone.style.borderColor = '#d1d5db';
-    });
-
-    videoUploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        videoUploadZone.style.backgroundColor = 'transparent';
-        videoUploadZone.style.borderColor = '#d1d5db';
-
-        if (e.dataTransfer.files.length > 0) {
-            selectedVideoFile = e.dataTransfer.files[0];
-            videoUploadText.innerHTML = `<strong>Selected:</strong><br>${selectedVideoFile.name}`;
-        }
-    });
-
-    // =========================================================================
-    // VIDEO COMPRESSOR DYNAMIC VIEWS & SETUP
-    // =========================================================================
-    const videoUploadView = document.getElementById('video-upload-view');
-    const videoLoadingView = document.getElementById('video-loading-view');
-    const videoResultView = document.getElementById('video-result-view');
-    const videoDestBadge = document.getElementById('video-dest-badge');
-    const videoDestDisplay = document.getElementById('video-dest-display');
-    const btnBrowseDestFolder = document.getElementById('btn-browse-dest-folder');
-    const videoDestFolderInput = document.getElementById('video-dest-folder-input');
-    const videoResultStats = document.getElementById('video-result-stats');
-    const videoSavedBadge = document.getElementById('video-saved-badge');
-    const videoResultLocation = document.getElementById('video-result-location');
-    const videoDownloadBtn = document.getElementById('video-download-btn');
-    const videoCompressAnotherBtn = document.getElementById('video-compress-another-btn');
-
-    let currentCompressedBlob = null;
-    let currentCompressedFileName = 'compressed_video.mp4';
-    let selectedDestFolder = 'Upload_backend/';
-
-    // Opens the native OS File Manager / Folder Picker so users don't have to type paths
-    async function selectDestinationFolder() {
-        if (window.showDirectoryPicker) {
-            try {
-                const dirHandle = await window.showDirectoryPicker();
-                if (dirHandle && dirHandle.name) {
-                    selectedDestFolder = dirHandle.name + '/';
-                    if (videoDestDisplay) {
-                        videoDestDisplay.textContent = selectedDestFolder;
-                    }
-                }
-            } catch (err) {
-                // User cancelled or closed the picker without choosing
-                if (err.name !== 'AbortError') {
-                    console.warn('DirectoryPicker notice:', err);
-                    if (videoDestFolderInput) videoDestFolderInput.click();
-                }
-            }
-        } else if (videoDestFolderInput) {
-            // Fallback for browsers without showDirectoryPicker
-            videoDestFolderInput.click();
-        }
+    for (const key in screens) {
+        const isThisOne = (key === name);
+        screens[key].classList.toggle('active-view', isThisOne);
+        screens[key].classList.toggle('hidden-view', !isThisOne);
     }
-
-    if (btnBrowseDestFolder) {
-        btnBrowseDestFolder.addEventListener('click', selectDestinationFolder);
-    }
-    if (videoDestBadge) {
-        videoDestBadge.addEventListener('click', selectDestinationFolder);
-    }
-
-    if (videoDestFolderInput) {
-        videoDestFolderInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files.length > 0) {
-                const relativePath = e.target.files[0].webkitRelativePath;
-                if (relativePath) {
-                    const topFolder = relativePath.split('/')[0];
-                    if (topFolder) {
-                        selectedDestFolder = topFolder + '/';
-                        if (videoDestDisplay) {
-                            videoDestDisplay.textContent = selectedDestFolder;
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function switchVideoView(viewName) {
-        if (videoUploadView) {
-            videoUploadView.classList.toggle('active-view', viewName === 'upload');
-            videoUploadView.classList.toggle('hidden-view', viewName !== 'upload');
-        }
-        if (videoLoadingView) {
-            videoLoadingView.classList.toggle('active-view', viewName === 'loading');
-            videoLoadingView.classList.toggle('hidden-view', viewName !== 'loading');
-        }
-        if (videoResultView) {
-            videoResultView.classList.toggle('active-view', viewName === 'result');
-            videoResultView.classList.toggle('hidden-view', viewName !== 'result');
-        }
-    }
-
-    // Reset button to compress another video
-    if (videoCompressAnotherBtn) {
-        videoCompressAnotherBtn.addEventListener('click', () => {
-            selectedVideoFile = null;
-            if (videoFileInput) videoFileInput.value = '';
-            if (videoUploadText) videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
-            currentCompressedBlob = null;
-            switchVideoView('upload');
-        });
-    }
-
-    // Download button handler when on the Result Screen
-    if (videoDownloadBtn) {
-        videoDownloadBtn.addEventListener('click', () => {
-            if (!currentCompressedBlob) return;
-            const downloadUrl = window.URL.createObjectURL(currentCompressedBlob);
-            const downloadLink = document.createElement('a');
-            downloadLink.style.display = 'none';
-            downloadLink.href = downloadUrl;
-            downloadLink.download = currentCompressedFileName;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            setTimeout(() => {
-                downloadLink.remove();
-                window.URL.revokeObjectURL(downloadUrl);
-            }, 2000);
-        });
-    }
-
-    videoCompressBtn.addEventListener('click', () => {
-        if (!selectedVideoFile) {
-            alert("Please select or drop a video file first!");
-            return;
-        }
-
-        // =========================================================================
-        // HEY EARL & NISHKY! (FRONT-END VIDEO COMPRESSOR CONNECTION)
-        // =========================================================================
-        // 1. Loading Screen: The frontend now swaps into a loading screen while
-        //    Python is running FFmpeg, so the user knows it's working!
-        // 2. Setting Save Folder: The user can now click "Browse..." to pick where
-        //    to save the file (opened through native file manager) instead of typing!
-        //    Defaults to 'Upload_backend/'. You can read this in Python with:
-        //    dest_folder = request.form.get('dest_folder', 'Upload_backend')
-        // 3. Finished Screen: When Python finishes and returns the blob/file,
-        //    the frontend displays the size savings and exact save location,
-        //    along with a Download button and a Compress Another button!
-        // =========================================================================
-
-        // Switch to the Loading Screen view
-        switchVideoView('loading');
-
-        const destFolder = selectedDestFolder || 'Upload_backend/';
-        const originalFileName = selectedVideoFile.name;
-
-        // Package the video file and destination folder to send to Python
-        const formData = new FormData();
-        formData.append('video_file', selectedVideoFile);
-        formData.append('dest_folder', destFolder);
-
-        fetch('http://127.0.0.1:5000/compress', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server returned error status: ${response.status}`);
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                // Calculate file size statistics
-                const originalMB = (selectedVideoFile.size / 1024 / 1024).toFixed(2);
-                const compressedMB = (blob.size / 1024 / 1024).toFixed(2);
-                const savedPercent = (((selectedVideoFile.size - blob.size) / selectedVideoFile.size) * 100).toFixed(0);
-
-                currentCompressedBlob = blob;
-                currentCompressedFileName = 'compressed_' + originalFileName;
-
-                // Update the result screen UI
-                if (videoResultStats) {
-                    videoResultStats.innerHTML = `Original: <strong>${originalMB} MB</strong> → Compressed: <strong style="color: #16a34a;">${compressedMB} MB</strong>`;
-                }
-                if (videoSavedBadge) {
-                    videoSavedBadge.textContent = `Saved ${savedPercent}%`;
-                }
-                if (videoResultLocation) {
-                    videoResultLocation.innerHTML = `Saved in: <code>${destFolder}${currentCompressedFileName}</code>`;
-                }
-
-                // Show the Finished Result Screen
-                switchVideoView('result');
-            })
-            .catch(error => {
-                console.error('Compression Error:', error);
-                alert("An error occurred during compression. Make sure the Python server is running.");
-                switchVideoView('upload');
-            });
-
-    });
 }
 
-/* ========================================================================= */
-/* 9. Document Tools Logic */
-/* ========================================================================= */
+// orange highlight while a file is dragged over a drop zone
+function highlightZone(zone, on) {
+    zone.style.backgroundColor = on ? '#fff0e6' : '';
+    zone.style.borderColor = on ? 'var(--school-orange)' : '';
+}
+
+// used by both the browse button and drag & drop
+function chooseVideo(file) {
+    selectedVideoFile = file;
+    videoUploadText.innerHTML = `<strong>Selected:</strong><br>${file.name}`;
+}
+
+// 1. pick the video
+videoBrowseBtn.addEventListener('click', () => {
+    videoFileInput.click();
+});
+
+videoFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        chooseVideo(e.target.files[0]);
+    }
+});
+
+videoUploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    highlightZone(videoUploadZone, true);
+});
+
+videoUploadZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    highlightZone(videoUploadZone, false);
+});
+
+videoUploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    highlightZone(videoUploadZone, false);
+
+    if (e.dataTransfer.files.length > 0) {
+        chooseVideo(e.dataTransfer.files[0]);
+    }
+});
+
+// 2. pick the save location (opens the File Manager, so no typing the path)
+function setDestFolder(name) {
+    destFolder = name + '/';
+    destText.textContent = destFolder;
+}
+
+async function pickDestFolder() {
+    // Chrome / Edge can open the real folder window
+    if (window.showDirectoryPicker) {
+        try {
+            destFolderHandle = await window.showDirectoryPicker();
+            setDestFolder(destFolderHandle.name);
+        } catch (err) {
+            // AbortError just means the user closed the window, so ignore it.
+            // any other error: use the hidden folder input instead
+            if (err.name !== 'AbortError') destFolderInput.click();
+        }
+    } else {
+        // other browsers use the hidden folder input
+        destFolderInput.click();
+    }
+}
+
+destBrowseBtn.addEventListener('click', pickDestFolder);
+destBadge.addEventListener('click', pickDestFolder);
+
+// the fallback: a hidden input that lets you pick a folder
+destFolderInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        // webkitRelativePath looks like "MyFolder/video.mp4", we only want "MyFolder"
+        const folderName = e.target.files[0].webkitRelativePath.split('/')[0];
+        setDestFolder(folderName);
+    }
+});
+
+// 3. COMPRESS NOW
+videoCompressBtn.addEventListener('click', () => {
+    if (!selectedVideoFile) {
+        alert("Please select or drop a video file first!");
+        return;
+    }
+
+    // =========================================================================
+    // HEY EARL & NISHKY! (FRONT-END VIDEO COMPRESSOR CONNECTION)
+    // =========================================================================
+    // 1. Loading Screen: The frontend swaps into a loading screen while
+    //    Python is running FFmpeg, so the user knows it's working!
+    // 2. Save Folder: The user clicks "Browse..." to pick the folder. The
+    //    front-end sends it as 'dest_folder', but it's ONLY THE FOLDER NAME
+    //    (like 'nuod/'), not the full path. Browsers don't share full paths!
+    //    So Python can't know where that folder really is. Read the TODO
+    //    in file_upload.py about this.
+    // 3. Finished Screen: When Python finishes and returns the file,
+    //    the frontend shows the size savings, a Download button
+    //    and a Compress Another button!
+    // =========================================================================
+
+    showVideoScreen('loading');
+
+    // package the video and the folder name so Python can read them
+    const formData = new FormData();
+    formData.append('video_file', selectedVideoFile);
+    formData.append('dest_folder', destFolder);
+
+    fetch('http://127.0.0.1:5000/compress', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Server returned error status: ' + response.status);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // the file sizes in MB, to show how much was saved
+            const originalMB = (selectedVideoFile.size / 1024 / 1024).toFixed(2);
+            const compressedMB = (blob.size / 1024 / 1024).toFixed(2);
+            const savedPercent = (((selectedVideoFile.size - blob.size) / selectedVideoFile.size) * 100).toFixed(0);
+
+            // Python always sends back an .mp4, so the new name ends with .mp4 too
+            const originalName = selectedVideoFile.name;
+            const nameOnly = originalName.includes('.') ? originalName.substring(0, originalName.lastIndexOf('.')) : originalName;
+
+            compressedBlob = blob;
+            compressedFileName = 'compressed_' + nameOnly + '.mp4';
+
+            // fill in the result screen
+            resultStats.innerHTML = `Original: <strong>${originalMB} MB</strong> → Compressed: <strong style="color: #16a34a;">${compressedMB} MB</strong>`;
+            resultBadge.textContent = `Saved ${savedPercent}%`;
+            // TODO: this only shows the folder the user picked.
+            // The file isn't really saved there until Python (or the front-end) does it.
+            resultLocation.innerHTML = `Saved in: <code>${destFolder}${compressedFileName}</code>`;
+
+            showVideoScreen('result');
+        })
+        .catch(error => {
+            console.error('Compression Error:', error);
+            alert("An error occurred during compression. Make sure the Python server is running.");
+            showVideoScreen('upload');
+        });
+});
+
+// Download button on the result screen
+downloadBtn.addEventListener('click', () => {
+    // makes a temporary link to the file in memory, then clicks it
+    const fileUrl = URL.createObjectURL(compressedBlob);
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = compressedFileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // clean up the temporary link after a bit
+    setTimeout(() => URL.revokeObjectURL(fileUrl), 2000);
+});
+
+// Compress Another Video button: back to the start
+compressAnotherBtn.addEventListener('click', () => {
+    selectedVideoFile = null;
+    compressedBlob = null;
+    videoFileInput.value = '';
+    videoUploadText.innerHTML = "Drag & Drop Your<br>Video File Here";
+    showVideoScreen('upload');
+});
+
+/* 9. Document Tools */
 const docUploadZone = document.getElementById('doc-upload-zone');
-const docUploadText = document.getElementById('doc-upload-text');
 const docBrowseBtn = document.getElementById('doc-browse-btn');
 const docFileInput = document.getElementById('doc-file-input');
 
+// the 2 screens: pick files -> choose what to do (convert / merge)
 const docUploadView = document.getElementById('doc-upload-view');
 const docActionView = document.getElementById('doc-action-view');
 const docSelectedFilesText = document.getElementById('doc-selected-files');
@@ -676,129 +671,113 @@ const btnDocMerge = document.getElementById('btn-doc-merge');
 
 let selectedDocFiles = [];
 
-if (docUploadZone && docFileInput) {
-    // Handle Clicking Browse
-    docBrowseBtn.addEventListener('click', () => {
-        docFileInput.click();
-    });
+// swaps the 2 screens. name is 'upload' or 'action'
+function showDocScreen(name) {
+    const isUpload = (name === 'upload');
 
-    // Handle File Selection
-    docFileInput.addEventListener('change', (e) => {
-        handleDocFiles(e.target.files);
-    });
+    docUploadView.classList.toggle('active-view', isUpload);
+    docUploadView.classList.toggle('hidden-view', !isUpload);
+    docActionView.classList.toggle('active-view', !isUpload);
+    docActionView.classList.toggle('hidden-view', isUpload);
+}
 
-    // Handle Drag & Drop
-    docUploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        docUploadZone.style.backgroundColor = '#fff0e6';
-        docUploadZone.style.borderColor = 'var(--school-orange)';
-    });
+// saves the files, lists their names, then shows the action screen
+function handleDocFiles(files) {
+    if (files.length > 0) {
+        selectedDocFiles = Array.from(files);
 
-    docUploadZone.addEventListener('dragleave', () => {
-        docUploadZone.style.backgroundColor = '#fafafa';
-        docUploadZone.style.borderColor = 'var(--border-color)';
-    });
+        const fileNames = selectedDocFiles.map(f => f.name).join('<br>');
+        docSelectedFilesText.innerHTML = `<strong>Selected Files:</strong><br>${fileNames}`;
 
-    docUploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        docUploadZone.style.backgroundColor = '#fafafa';
-        docUploadZone.style.borderColor = 'var(--border-color)';
-        handleDocFiles(e.dataTransfer.files);
-    });
+        showDocScreen('action');
+    }
+}
 
-    // Function to process selected files and swap views
-    function handleDocFiles(files) {
-        if (files.length > 0) {
-            selectedDocFiles = Array.from(files);
+docBrowseBtn.addEventListener('click', () => {
+    docFileInput.click();
+});
 
-            // Build text showing how many files were uploaded
-            let fileNames = selectedDocFiles.map(f => f.name).join('<br>');
-            docSelectedFilesText.innerHTML = `<strong>Selected Files:</strong><br>${fileNames}`;
+docFileInput.addEventListener('change', (e) => {
+    handleDocFiles(e.target.files);
+});
 
-            // Swap to the Actions View
-            docUploadView.classList.add('hidden-view');
-            docUploadView.classList.remove('active-view');
-            docActionView.classList.remove('hidden-view');
-            docActionView.classList.add('active-view');
-        }
+docUploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    highlightZone(docUploadZone, true);
+});
+
+docUploadZone.addEventListener('dragleave', () => {
+    highlightZone(docUploadZone, false);
+});
+
+docUploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    highlightZone(docUploadZone, false);
+    handleDocFiles(e.dataTransfer.files);
+});
+
+// Cancel / Start Over
+docCancelBtn.addEventListener('click', () => {
+    selectedDocFiles = [];
+    docFileInput.value = '';
+    showDocScreen('upload');
+});
+
+// Placeholder for Convert Action
+btnDocConvert.addEventListener('click', () => {
+    // TODO TEAMMATE: Connect to Python's /convert route!
+    // 1. Create a new FormData()
+    // 2. Append the selectedDocFiles[0] to it
+    // 3. Use fetch('http://127.0.0.1:5000/convert', ...) to send it to Python
+    // 4. Handle the JSON response (e.g., showing a download link!)
+    alert("This will send " + selectedDocFiles.length + " file(s) to Python to convert to PDF/DOC/PPT!");
+});
+
+// Placeholder for Merge Action
+btnDocMerge.addEventListener('click', () => {
+    if (selectedDocFiles.length < 2) {
+        alert("You need at least 2 files to merge them!");
+        return;
     }
 
-    // Handle "Cancel / Start Over"
-    docCancelBtn.addEventListener('click', () => {
-        selectedDocFiles = [];
-        docFileInput.value = '';
+    // TODO TEAMMATE: Connect to Python's /merge route!
+    // 1. Create a new FormData()
+    // 2. Use a loop to append ALL files in selectedDocFiles array to the formData
+    // 3. Use fetch('http://127.0.0.1:5000/merge', ...) to send them all to Python
+    // 4. Handle the JSON response to show the merged download link
+    alert("This will send " + selectedDocFiles.length + " files to Python to merge them together!");
+});
 
-        // Swap back to Upload View
-        docActionView.classList.add('hidden-view');
-        docActionView.classList.remove('active-view');
-        docUploadView.classList.remove('hidden-view');
-        docUploadView.classList.add('active-view');
-    });
-
-    // Placeholder for Convert Action
-    btnDocConvert.addEventListener('click', () => {
-        // TODO TEAMMATE: Connect to Python's /convert route!
-        // 1. Create a new FormData()
-        // 2. Append the selectedDocFiles[0] to it
-        // 3. Use fetch('http://127.0.0.1:5000/convert', ...) to send it to Python
-        // 4. Handle the JSON response (e.g., showing a download link!)
-        alert("This will send " + selectedDocFiles.length + " file(s) to Python to convert to PDF/DOC/PPT!");
-    });
-
-    // Placeholder for Merge Action
-    btnDocMerge.addEventListener('click', () => {
-        if (selectedDocFiles.length < 2) {
-            alert("You need at least 2 files to merge them!");
-            return;
-        }
-
-        // TODO TEAMMATE: Connect to Python's /merge route!
-        // 1. Create a new FormData()
-        // 2. Use a loop to append ALL files in selectedDocFiles array to the formData
-        // 3. Use fetch('http://127.0.0.1:5000/merge', ...) to send them all to Python
-        // 4. Handle the JSON response to show the merged download link
-        alert("This will send " + selectedDocFiles.length + " files to Python to merge them together!");
-    });
-}
-
-/* ========================================================================= */
 /* 10. Draggable Custom Layout */
-/* ========================================================================= */
 const dashboardGrid = document.querySelector('.dashboard-grid');
-if (dashboardGrid) {
-    new Sortable(dashboardGrid, {
-        animation: 250,           // ms, animation speed moving items when sorting
-        easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-        ghostClass: 'sortable-ghost',  // Class name for the drop placeholder
-        dragClass: 'sortable-drag',    // Class name for the dragging item
-        delay: 150,               // Time in ms to define when the sorting should start (useful for clicking inner elements vs dragging)
-        delayOnTouchOnly: true,   // Only delay if user is using touch
-        handle: '.widget-header', // Optional: if you only want the header to be the drag handle. (Removing this makes the whole card draggable)
-    });
-}
 
-/* ========================================================================= */
+new Sortable(dashboardGrid, {
+    animation: 250,                  // how fast the cards slide around (ms)
+    easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+    ghostClass: 'sortable-ghost',    // class for the empty spot while dragging
+    dragClass: 'sortable-drag',      // class for the card being dragged
+    delay: 150,                      // wait a bit before dragging starts (for touch screens)
+    delayOnTouchOnly: true,
+    handle: '.widget-header'         // you can only drag a card by its header
+});
+
 /* 11. User Session & Logout */
-/* ========================================================================= */
-const loggedInUserRaw = localStorage.getItem('currentUser');
-if (loggedInUserRaw) {
+const savedUser = localStorage.getItem('currentUser');
+
+if (savedUser) {
     try {
-        const loggedInUser = JSON.parse(loggedInUserRaw);
-        const userNameElem = document.querySelector('.user-profile .user-name');
-        const userAvatarElem = document.querySelector('.user-profile .avatar');
+        const user = JSON.parse(savedUser);
 
-        if (userNameElem && loggedInUser.name) {
-            userNameElem.textContent = loggedInUser.name;
-        }
+        // show the name in the top right
+        document.querySelector('.user-profile .user-name').textContent = user.name;
 
-        if (userAvatarElem && loggedInUser.name) {
-            // Generate initials (e.g., "Juan Dela Cruz" -> "JD")
-            const parts = loggedInUser.name.trim().split(' ');
-            const initials = parts.length > 1
-                ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-                : parts[0].substring(0, 2).toUpperCase();
-            userAvatarElem.textContent = initials;
+        // the circle shows initials. "Juan Dela Cruz" -> "JC"
+        const words = user.name.trim().split(' ');
+        let initials = words[0].substring(0, 2);   // only one name: first 2 letters
+        if (words.length > 1) {
+            initials = words[0][0] + words[words.length - 1][0];   // first + last name
         }
+        document.querySelector('.user-profile .avatar').textContent = initials.toUpperCase();
     } catch (e) {
         console.error('Error loading user session:', e);
     }
@@ -812,350 +791,287 @@ if (logoutBtn) {
     });
 }
 
-/* ========================================================================= */
-/* 12. Calendar View Page Switching & Schedule Sync */
-/* ========================================================================= */
-// Navigation elements
+/* 12. Calendar Page (the Calendar button in the sidebar) */
+
+// sidebar buttons + the two "pages" that swap places
 const navHomeBtn = document.getElementById('nav-home-btn');
 const navCalendarBtn = document.getElementById('nav-calendar-btn');
-const pageTitleElem = document.getElementById('page-title');
+const pageTitle = document.getElementById('page-title');
 const dashboardView = document.getElementById('dashboard-view');
 const calendarPageView = document.getElementById('calendar-page-view');
 
-// Calendar Page View elements
-const calPagePrevBtn = document.getElementById('cal-page-prev-btn');
-const calPageNextBtn = document.getElementById('cal-page-next-btn');
-const calPageTodayBtn = document.getElementById('cal-page-today-btn');
-const calPageMonthHeading = document.getElementById('cal-page-month-heading');
-const calPageDaysGrid = document.getElementById('cal-page-days-grid');
-const schedulesCounterBadge = document.getElementById('schedules-counter-badge');
-const schedulesFilterText = document.getElementById('schedules-filter-text');
-const schedulesResetBtn = document.getElementById('schedules-reset-btn');
-const schedulesCardList = document.getElementById('schedules-card-list');
+// stuff inside the calendar page
+const calPrevBtn = document.getElementById('cal-page-prev-btn');
+const calNextBtn = document.getElementById('cal-page-next-btn');
+const calTodayBtn = document.getElementById('cal-page-today-btn');
+const calHeading = document.getElementById('cal-page-month-heading');
+const calDaysGrid = document.getElementById('cal-page-days-grid');
+const taskCountBadge = document.getElementById('schedules-counter-badge');
+const filterText = document.getElementById('schedules-filter-text');
+const showAllBtn = document.getElementById('schedules-reset-btn');
+const taskListBox = document.getElementById('schedules-card-list');
 
-let calPageCurrentMonth = new Date().getMonth();
-let calPageCurrentYear = new Date().getFullYear();
-let calPageSelectedDay = null;
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let pickedDay = null;   // the day the user clicked (null = show all tasks)
 
-// 1. Gathers all tasks from the Scheduler widget that have a set due date
-function getScheduledTasksFromScheduler() {
+// 1. collects every task in the Scheduler that has a date
+function getScheduledTasks() {
     const tasks = [];
-    const scheduler = document.getElementById('scheduler-container');
-    if (!scheduler) return tasks;
+    const cards = document.querySelectorAll('#scheduler-container .task-card');
 
-    const categories = scheduler.querySelectorAll('.task-category');
-    categories.forEach(category => {
-        const catTitleElem = category.querySelector('.category-title');
-        const categoryName = catTitleElem ? catTitleElem.textContent.trim() : 'Scheduler';
+    cards.forEach(card => {
+        // no date saved on this card yet, so skip it
+        if (!card.dataset.day) return;
 
-        const taskCards = category.querySelectorAll('.task-card');
-        taskCards.forEach(card => {
-            const titleElem = card.querySelector('.task-title');
-            const dueElem = card.querySelector('.task-due');
-            const statusElem = card.querySelector('.status-text');
-            const colorElem = card.querySelector('.card-color-line');
-            const checkbox = card.querySelector('.task-checkbox');
-
-            const title = titleElem ? titleElem.textContent.trim() : 'Untitled Task';
-            const due = dueElem ? dueElem.textContent.trim() : 'No Due Date';
-            const status = statusElem ? statusElem.textContent.trim() : 'Not Scheduled';
-            const color = colorElem ? (colorElem.style.backgroundColor || '#f57c00') : '#f57c00';
-            const isCompleted = checkbox ? checkbox.checked : false;
-
-            // Only grab tasks that have a scheduled date
-            if (due && due !== 'No Due Date') {
-                tasks.push({
-                    title,
-                    category: categoryName,
-                    due,
-                    status,
-                    color,
-                    isCompleted
-                });
-            }
+        tasks.push({
+            title: card.querySelector('.task-title').textContent.trim(),
+            category: card.closest('.task-category').querySelector('.category-title').textContent.trim(),
+            due: card.querySelector('.task-due').textContent,
+            status: card.querySelector('.status-text').textContent,
+            color: card.querySelector('.card-color-line').style.backgroundColor || '#f57c00',
+            done: card.querySelector('.task-checkbox').checked,
+            year: Number(card.dataset.year),
+            month: Number(card.dataset.month),
+            day: Number(card.dataset.day)
         });
     });
 
     return tasks;
 }
 
-// 2. Render Calendar Grid & Schedules List
-function renderCalendarPageView() {
-    if (!calPageMonthHeading || !calPageDaysGrid) return;
+// 2. draws the month on the left, then the task list on the right
+function drawCalendarPage() {
+    calHeading.textContent = monthNames[calMonth] + ' ' + calYear;
+    calDaysGrid.innerHTML = '';
 
-    const monthName = monthNames[calPageCurrentMonth];
-    calPageMonthHeading.textContent = `${monthName} ${calPageCurrentYear}`;
-    const monthShort = monthName.substring(0, 3);
-
-    // Fetch current tasks with dates from the scheduler
-    const allSchedules = getScheduledTasksFromScheduler();
-
-    // Reset grid
-    calPageDaysGrid.innerHTML = '';
-
-    const firstDayIndex = new Date(calPageCurrentYear, calPageCurrentMonth, 1).getDay();
-    const daysInMonth = new Date(calPageCurrentYear, calPageCurrentMonth + 1, 0).getDate();
+    const tasks = getScheduledTasks();
+    const firstDay = new Date(calYear, calMonth, 1).getDay();   // which weekday the 1st lands on
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
     const today = new Date();
 
-    // Leading empty cells
-    for (let i = 0; i < firstDayIndex; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.classList.add('cal-day-cell', 'empty');
-        calPageDaysGrid.appendChild(emptyCell);
+    // empty boxes before the 1st of the month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyBox = document.createElement('div');
+        emptyBox.classList.add('cal-day-cell', 'empty');
+        calDaysGrid.appendChild(emptyBox);
     }
 
-    // Month days
     for (let day = 1; day <= daysInMonth; day++) {
-        const dayCell = document.createElement('div');
-        dayCell.classList.add('cal-day-cell');
-        dayCell.textContent = day;
+        const cell = document.createElement('div');
+        cell.classList.add('cal-day-cell');
+        cell.textContent = day;
 
-        const isToday = (
-            day === today.getDate() &&
-            calPageCurrentMonth === today.getMonth() &&
-            calPageCurrentYear === today.getFullYear()
-        );
-        if (isToday) {
-            dayCell.classList.add('today');
+        // today gets an orange ring
+        if (day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear()) {
+            cell.classList.add('today');
         }
 
-        if (calPageSelectedDay === day) {
-            dayCell.classList.add('selected');
+        // the day the user clicked turns orange
+        if (day === pickedDay) {
+            cell.classList.add('selected');
         }
 
-        // Check if any schedule matches this day (e.g. "Oct 17")
-        const datePrefix = `${monthShort} ${day}`;
-        const tasksForDay = allSchedules.filter(t => t.due && t.due.startsWith(datePrefix));
+        // small dots under the number for each task on that day (3 max)
+        const tasksThisDay = tasks.filter(t => t.year === calYear && t.month === calMonth && t.day === day);
 
-        if (tasksForDay.length > 0) {
-            dayCell.classList.add('has-tasks');
-            dayCell.title = `${tasksForDay.length} task${tasksForDay.length > 1 ? 's' : ''} scheduled`;
+        if (tasksThisDay.length > 0) {
+            cell.title = tasksThisDay.length + ' task(s) scheduled';
 
-            const dotsContainer = document.createElement('div');
-            dotsContainer.classList.add('cal-day-dots');
+            const dots = document.createElement('div');
+            dots.classList.add('cal-day-dots');
 
-            const dotCount = Math.min(tasksForDay.length, 3);
-            for (let d = 0; d < dotCount; d++) {
+            for (let i = 0; i < Math.min(tasksThisDay.length, 3); i++) {
                 const dot = document.createElement('span');
                 dot.classList.add('cal-dot');
-                if (tasksForDay[d] && tasksForDay[d].color && tasksForDay[d].color !== '#dadce0') {
-                    dot.style.backgroundColor = tasksForDay[d].color;
-                }
-                dotsContainer.appendChild(dot);
+                dot.style.backgroundColor = tasksThisDay[i].color;
+                dots.appendChild(dot);
             }
-            dayCell.appendChild(dotsContainer);
+            cell.appendChild(dots);
         }
 
-        // Clicking a day filters the schedule list on the right
-        dayCell.addEventListener('click', () => {
-            if (calPageSelectedDay === day) {
-                calPageSelectedDay = null; // Toggle off
-            } else {
-                calPageSelectedDay = day;
-            }
-            renderCalendarPageView();
+        // clicking a day only shows that day's tasks. Click it again to undo
+        cell.addEventListener('click', () => {
+            pickedDay = (pickedDay === day) ? null : day;
+            drawCalendarPage();
         });
 
-        calPageDaysGrid.appendChild(dayCell);
+        calDaysGrid.appendChild(cell);
     }
 
-    // Render schedule cards on the right
-    renderSchedulesList(allSchedules, monthShort);
+    drawTaskList(tasks);
 }
 
-// 3. Render the schedules card list on the right
-function renderSchedulesList(allSchedules, monthShort) {
-    if (!schedulesCardList) return;
-    schedulesCardList.innerHTML = '';
+// 3. draws the task cards on the right
+function drawTaskList(allTasks) {
+    taskListBox.innerHTML = '';
+    const shortMonth = monthNames[calMonth].substring(0, 3);   // "October" -> "Oct"
 
-    let displayedTasks = allSchedules;
+    // if a day is picked, only keep that day's tasks
+    let tasksToShow = allTasks;
 
-    if (calPageSelectedDay !== null) {
-        const datePrefix = `${monthShort} ${calPageSelectedDay}`;
-        displayedTasks = allSchedules.filter(t => t.due && t.due.startsWith(datePrefix));
-
-        if (schedulesFilterText) {
-            schedulesFilterText.textContent = `Showing schedules for ${monthShort} ${calPageSelectedDay}`;
-        }
-        if (schedulesResetBtn) {
-            schedulesResetBtn.classList.remove('hidden');
-        }
+    if (pickedDay !== null) {
+        tasksToShow = allTasks.filter(t => t.year === calYear && t.month === calMonth && t.day === pickedDay);
+        filterText.textContent = 'Showing schedules for ' + shortMonth + ' ' + pickedDay;
+        showAllBtn.classList.remove('hidden');
     } else {
-        if (schedulesFilterText) {
-            schedulesFilterText.textContent = `All Scheduled Tasks (${allSchedules.length})`;
-        }
-        if (schedulesResetBtn) {
-            schedulesResetBtn.classList.add('hidden');
-        }
+        filterText.textContent = 'All Scheduled Tasks (' + allTasks.length + ')';
+        showAllBtn.classList.add('hidden');
     }
 
-    if (schedulesCounterBadge) {
-        schedulesCounterBadge.textContent = `${displayedTasks.length} Task${displayedTasks.length === 1 ? '' : 's'}`;
-    }
+    taskCountBadge.textContent = tasksToShow.length + (tasksToShow.length === 1 ? ' Task' : ' Tasks');
 
-    // Empty state
-    if (displayedTasks.length === 0) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.classList.add('schedules-empty-state');
+    // nothing to show, so show a message instead
+    if (tasksToShow.length === 0) {
+        const emptyBox = document.createElement('div');
+        emptyBox.classList.add('schedules-empty-state');
 
-        if (calPageSelectedDay !== null) {
-            emptyDiv.innerHTML = `
+        if (pickedDay !== null) {
+            // empty because of the day the user picked
+            emptyBox.innerHTML = `
                 <div class="empty-icon-circle">
                     <img src="icons/calendar.svg" alt="Calendar" class="empty-cal-icon">
                 </div>
                 <h3>No Tasks on this Date</h3>
-                <p>No tasks from your scheduler are scheduled for ${monthShort} ${calPageSelectedDay}.</p>
-                <button type="button" class="schedules-reset-btn" id="empty-clear-filter-btn" style="text-decoration:none; font-weight:700;">Show All Scheduled Tasks</button>
-            `;
-            const emptyClearBtn = emptyDiv.querySelector('#empty-clear-filter-btn');
-            if (emptyClearBtn) {
-                emptyClearBtn.addEventListener('click', () => {
-                    calPageSelectedDay = null;
-                    renderCalendarPageView();
-                });
-            }
+                <p>No tasks from your scheduler are scheduled for ${shortMonth} ${pickedDay}.</p>
+                <button type="button" class="schedules-reset-btn" style="text-decoration:none; font-weight:700;">Show All Scheduled Tasks</button>`;
+
+            emptyBox.querySelector('button').addEventListener('click', () => {
+                pickedDay = null;
+                drawCalendarPage();
+            });
         } else {
-            emptyDiv.innerHTML = `
+            // empty because no task has a date yet
+            emptyBox.innerHTML = `
                 <div class="empty-icon-circle">
                     <img src="icons/calendar.svg" alt="Calendar" class="empty-cal-icon">
                 </div>
                 <h3>No Scheduled Tasks</h3>
                 <p>Tasks with a set date in your Scheduler will smoothly appear here.</p>
-                <button type="button" class="cal-go-scheduler-btn" id="btn-goto-scheduler">
+                <button type="button" class="cal-go-scheduler-btn">
                     <img src="icons/plus.svg" alt="" class="cal-btn-icon">
                     Open Scheduler
-                </button>
-            `;
-            const gotoSchedulerBtn = emptyDiv.querySelector('#btn-goto-scheduler');
-            if (gotoSchedulerBtn) {
-                gotoSchedulerBtn.addEventListener('click', () => {
-                    switchToDashboard(true);
-                });
-            }
+                </button>`;
+
+            // sends the user back to the dashboard and makes the Scheduler glow
+            emptyBox.querySelector('button').addEventListener('click', () => {
+                showDashboardPage(true);
+            });
         }
 
-        schedulesCardList.appendChild(emptyDiv);
+        taskListBox.appendChild(emptyBox);
         return;
     }
 
-    // Render each schedule card
-    displayedTasks.forEach(task => {
+    // one card for each task
+    tasksToShow.forEach(task => {
         const card = document.createElement('div');
         card.classList.add('sched-item-card');
 
+        // the status color (Doing = green, Overdue = red, the rest = orange)
         let statusClass = 'scheduled';
-        const stLower = task.status.toLowerCase();
-        if (stLower.includes('doing')) statusClass = 'doing';
-        else if (stLower.includes('overdue')) statusClass = 'overdue';
+        if (task.status === 'Doing') statusClass = 'doing';
+        if (task.status === 'Overdue') statusClass = 'overdue';
 
         card.innerHTML = `
-            <div class="sched-color-bar" style="background-color: ${task.color || '#f57c00'};"></div>
+            <div class="sched-color-bar"></div>
             <div class="sched-item-body">
                 <div class="sched-top-meta">
-                    <span class="sched-cat-tag">${task.category}</span>
-                    <span class="sched-status-tag ${statusClass}">${task.status}</span>
+                    <span class="sched-cat-tag"></span>
+                    <span class="sched-status-tag ${statusClass}"></span>
                 </div>
-                <h4 class="sched-task-name ${task.isCompleted ? 'completed' : ''}">${task.title}</h4>
+                <h4 class="sched-task-name"></h4>
                 <div class="sched-bottom-meta">
                     <img src="icons/calendar.svg" alt="Due" class="sched-due-icon">
-                    <span>${task.due}</span>
+                    <span class="sched-due-text"></span>
                 </div>
-            </div>
-        `;
+            </div>`;
 
-        schedulesCardList.appendChild(card);
+        // the text is added here (not in the template above) so weird characters can't break the page
+        card.querySelector('.sched-color-bar').style.backgroundColor = task.color;
+        card.querySelector('.sched-cat-tag').textContent = task.category;
+        card.querySelector('.sched-status-tag').textContent = task.status;
+        card.querySelector('.sched-task-name').textContent = task.title;
+        card.querySelector('.sched-due-text').textContent = task.due;
+
+        // finished tasks get a line through them
+        if (task.done) {
+            card.querySelector('.sched-task-name').classList.add('completed');
+        }
+
+        taskListBox.appendChild(card);
     });
 }
 
-// 4. View Switcher functions
-function switchToCalendar() {
-    if (navHomeBtn) navHomeBtn.classList.remove('active');
-    if (navCalendarBtn) navCalendarBtn.classList.add('active');
+// 4. swapping between the Dashboard and the Calendar page
+function showCalendarPage() {
+    navHomeBtn.classList.remove('active');
+    navCalendarBtn.classList.add('active');
+    pageTitle.textContent = 'CALENDAR';
 
-    if (pageTitleElem) pageTitleElem.textContent = 'CALENDAR';
+    dashboardView.classList.add('hidden');
+    calendarPageView.classList.remove('hidden');
 
-    if (dashboardView) dashboardView.classList.add('hidden');
-    if (calendarPageView) calendarPageView.classList.remove('hidden');
-
-    calPageSelectedDay = null;
-    renderCalendarPageView();
+    pickedDay = null;
+    drawCalendarPage();
 }
 
-function switchToDashboard(highlightScheduler = false) {
-    if (navCalendarBtn) navCalendarBtn.classList.remove('active');
-    if (navHomeBtn) navHomeBtn.classList.add('active');
+function showDashboardPage(glowScheduler) {
+    navCalendarBtn.classList.remove('active');
+    navHomeBtn.classList.add('active');
+    pageTitle.textContent = 'DASHBOARD';
 
-    if (pageTitleElem) pageTitleElem.textContent = 'DASHBOARD';
+    calendarPageView.classList.add('hidden');
+    dashboardView.classList.remove('hidden');
 
-    if (calendarPageView) calendarPageView.classList.add('hidden');
-    if (dashboardView) dashboardView.classList.remove('hidden');
-
-    if (highlightScheduler) {
+    // makes the Scheduler card glow for a bit so the user sees where to add tasks
+    if (glowScheduler) {
         const schedulerCard = document.querySelector('.widget.scheduler');
-        if (schedulerCard) {
-            schedulerCard.classList.remove('highlight-pulse');
-            void schedulerCard.offsetWidth; // trigger reflow
-            schedulerCard.classList.add('highlight-pulse');
-            schedulerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setTimeout(() => {
-                schedulerCard.classList.remove('highlight-pulse');
-            }, 2500);
-        }
+
+        schedulerCard.classList.remove('highlight-pulse');
+        void schedulerCard.offsetWidth;   // trick so the glow can play again
+        schedulerCard.classList.add('highlight-pulse');
+        schedulerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        setTimeout(() => schedulerCard.classList.remove('highlight-pulse'), 2500);
     }
 }
 
-// 5. Wire up Event Listeners
-if (navCalendarBtn) {
-    navCalendarBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchToCalendar();
-    });
-}
+// 5. buttons
+navCalendarBtn.addEventListener('click', (e) => {
+    e.preventDefault();   // stops the "#" link from jumping to the top
+    showCalendarPage();
+});
 
-if (navHomeBtn) {
-    navHomeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchToDashboard();
-    });
-}
+navHomeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    showDashboardPage(false);
+});
 
-if (calPagePrevBtn) {
-    calPagePrevBtn.addEventListener('click', () => {
-        calPageCurrentMonth--;
-        if (calPageCurrentMonth < 0) {
-            calPageCurrentMonth = 11;
-            calPageCurrentYear--;
-        }
-        calPageSelectedDay = null;
-        renderCalendarPageView();
-    });
-}
+calPrevBtn.addEventListener('click', () => {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    pickedDay = null;
+    drawCalendarPage();
+});
 
-if (calPageNextBtn) {
-    calPageNextBtn.addEventListener('click', () => {
-        calPageCurrentMonth++;
-        if (calPageCurrentMonth > 11) {
-            calPageCurrentMonth = 0;
-            calPageCurrentYear++;
-        }
-        calPageSelectedDay = null;
-        renderCalendarPageView();
-    });
-}
+calNextBtn.addEventListener('click', () => {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    pickedDay = null;
+    drawCalendarPage();
+});
 
-if (calPageTodayBtn) {
-    calPageTodayBtn.addEventListener('click', () => {
-        const now = new Date();
-        calPageCurrentMonth = now.getMonth();
-        calPageCurrentYear = now.getFullYear();
-        calPageSelectedDay = now.getDate();
-        renderCalendarPageView();
-    });
-}
+// Today button: jumps to this month and picks today
+calTodayBtn.addEventListener('click', () => {
+    const now = new Date();
+    calMonth = now.getMonth();
+    calYear = now.getFullYear();
+    pickedDay = now.getDate();
+    drawCalendarPage();
+});
 
-if (schedulesResetBtn) {
-    schedulesResetBtn.addEventListener('click', () => {
-        calPageSelectedDay = null;
-        renderCalendarPageView();
-    });
-}
+showAllBtn.addEventListener('click', () => {
+    pickedDay = null;
+    drawCalendarPage();
+});
