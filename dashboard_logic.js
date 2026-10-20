@@ -758,13 +758,22 @@ btnDocMerge.addEventListener('click', async () => {
             }
         );
 
-        const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.error || 'Document merging failed');
+            let message = 'Document merging failed';
+            try {const data = await response.json(); message = data.error || message;}
+            catch{}
+            throw new Error(message);
         }
 
-        const downloadUrl = 'http://127.0.0.1:5000' + data.download_url;
-        window.location.href = downloadUrl;
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = 'merged_document.pdf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => {URL.revokeObjectURL(downloadUrl);}, 1000);
 
     } catch (error) {
         console.error('Merging error: ', error);

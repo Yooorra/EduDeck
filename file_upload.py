@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from werkzeug.utils import secure_filename 
+from PyPDF2 import PdfMerger, PdfReader
+from flask_cors import CORS
 import os 
 import subprocess # this is for running the ffmpeg command in the terminal -EARL
-from PyPDF2 import PdfMerger
-from flask_cors import CORS
+import uuid
+import shutil
+import tempfile
+
 
 # init
 app = Flask(__name__)
@@ -92,44 +96,79 @@ def merge_documents():
     #check if at least two files were uploaded
     if len(files) < 2:
         return jsonify({'error': 'Please upload at least two documents to merge.'}), 400
-    saved_files = []
+
+    #create a temporary directory to store the uploaded files
+    temp_dir = tempfile.mkdtemp(prefix='merge_')
+    merger = PdfMerger()
 
     try:
+        saved_files = []
+
         for file in files:
             if not file.filename:
                 continue
 
             filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+            if not filename:
+                return jsonify({'error': 'Invalid filename.'}), 400
+
+            #only pdfs allowed
+            if os.path.splitext(filename)[1].lower() != '.pdf':
+                return jsonify({'error': 'Only PDF files are allowed.'}), 400
+
+            #create unique filename
+            stored_filename = (f'{uuid.uuid4()}_{filename}')
+            file_path = os.path.join(temp_dir, stored_filename)
             file.save(file_path)
+
+            if os.path.getsize(file_path) == 0:
+                return jsonify({'error': f'{filename} is empty.'}), 400
+
+            try: 
+                with open(file_path, 'rb') as pdf_stream:
+                    reader = PdfReader(pdf_stream, strict=False)
+
+                    if reader.is_encrypted:
+                        return jsonify({'error' : (f'{filename} is encrypted')}), 400
+
+                    if len(reader.pages) == 0:
+                        return jsonify({'error' : (f'{filename} has no pages')}), 400
+
+            except Exception:
+                return jsonify({'error' : (f'{filename} is not a readable pdf.')}), 400
+
             saved_files.append(file_path)
 
         #check if at least two valid files were saved
         if len(saved_files) < 2:
-            return jsonify({'error': 'Please upload at least two valid documents to merge.'}), 400
+            return jsonify({'error': 'Please upload at least two valid PDFs to merge'}), 400
 
-        # TODO: the file name is always 'merged_document.pdf'
-        # so a new merge will replace the old one. Give it a different name each time!
-        output_filename = 'merged_document.pdf'
-        output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
-
-        # TODO: this only works with PDF files!
-        # If the user uploads a DOC or PPT, it will crash here.
-        # Convert them to PDF first or tell the user it's PDF only.
-        merger = PdfMerger()
         for file_path in saved_files:
             merger.append(file_path)
 
+        #create unique filename(merged pdf)
+        output_path = os.path.join(temp_dir, f'merged_pdf{uuid.uuid4().hex}.pdf')
         merger.write(output_path)
         merger.close()
 
-        # TODO: the website can't find this link because it's missing the server address.
-        # Add http://127.0.0.1:5000 in front of it.
-        return jsonify({'download_url': f'/Upload_backend/{output_filename}'})
+        if (not os.path.exists(output_path)) or (os.path.getsize(output_path) == 0):
+            return jsonify({'error': 'Merged PDF not created.'}), 500
 
-    except Exception as e:
-        print(f"Error during document merging: {e}")
-        return jsonify({'error': 'An error occurred while merging documents.'}), 500
+        #send merged pdf directly to javascript isntead of saving it in Upload_backend
+        response = send_file(output_path, mimetype='application/pdf', as_attachment=True, download_name='merged_document.pdf')
+        response.call_on_close(lambda path=temp_dir: shutil.rmtree(path, ignore_errors=True))
+        temp_dir = None
+        return response
+
+    except Exception:
+        app.logger.exception('PDF merging failed.')
+        return jsonify({'error': 'PDF merging failed.'}), 500
+
+    finally:
+        merger.close()
+        if temp_dir is not None:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 #serve the merged document for download
 @app.route('/Upload_backend/<filename>')
@@ -164,9 +203,7 @@ def convert_document():
         print(f'Conversion failed: {e}')
         return jsonify({'error': 'Document conversion failed.'}), 500
     
-    # TODO: output_path is set twice. The first line gets replaced right away by the second.
-    # Delete the first line.
-    output_path = os.path.splitext(filename)[0] + '.pdf'
+    #removed the redundant line
     output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
 
     if not os.path.exists(output_path):
