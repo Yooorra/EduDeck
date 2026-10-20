@@ -733,19 +733,47 @@ btnDocConvert.addEventListener('click', () => {
     alert("This will send " + selectedDocFiles.length + " file(s) to Python to convert to PDF/DOC/PPT!");
 });
 
-// Placeholder for Merge Action
-btnDocMerge.addEventListener('click', () => {
+//merger
+btnDocMerge.addEventListener('click', async () => {
     if (selectedDocFiles.length < 2) {
-        alert("You need at least 2 files to merge them!");
+        alert("You need at least 2 files to merge");
         return;
     }
 
-    // TODO TEAMMATE: Connect to Python's /merge route!
-    // 1. Create a new FormData()
-    // 2. Use a loop to append ALL files in selectedDocFiles array to the formData
-    // 3. Use fetch('http://127.0.0.1:5000/merge', ...) to send them all to Python
-    // 4. Handle the JSON response to show the merged download link
-    alert("This will send " + selectedDocFiles.length + " files to Python to merge them together!");
+    const formData = new FormData();
+
+    for (const file of selectedDocFiles) {
+        formData.append('doc_files', file);
+    }
+
+    try {
+        btnDocMerge.disabled = true;
+        btnDocMerge.textContent = "Merging...";
+
+        const response = await fetch(
+            'http://127.0.0.1:5000/merge',
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || 'Document merging failed');
+        }
+
+        const downloadUrl = 'http://127.0.0.1:5000' + data.download_url;
+        window.location.href = downloadUrl;
+
+    } catch (error) {
+        console.error('Merging error: ', error);
+        alert(error.message);
+
+    } finally {
+        btnDocMerge.disabled = false;
+        btnDocMerge.textContent = 'Merge';
+    }
 });
 
 /* 10. Draggable Custom Layout */
