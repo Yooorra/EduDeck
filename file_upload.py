@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory, after_this_request
 from werkzeug.utils import secure_filename 
 from PyPDF2 import PdfMerger, PdfReader
 from flask_cors import CORS
@@ -13,11 +13,7 @@ import tempfile
 app = Flask(__name__)
 CORS(app) 
 
-
-# TODO: 'Upload_backend' is a short path, so it depends on which folder you run python from.
-# If it's run from another folder, files get saved in one place and looked for in another (404 error).
-# Use the full path instead: os.path.join(os.path.dirname(__file__), 'Upload_backend')
-UPLOAD_FOLDER = 'Upload_backend'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'Upload_backend') 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -27,7 +23,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # TODO EARL & NISHKY: VIDEO COMPRESSOR
 # 1. Only works on Earl's PC side. FFmpeg has to be installed on the PC that runs this,
 #    if not, it crashes. Add a try/except for when FFmpeg is missing.
-# 2. It does compress, but the file only appears inside the project's folder, not in the
+# 2. It does compress, but the file only appears inside the project's folder, not in the    
 #    browser's downloading tab. Make it sync with the loading screen that was added:
 #    loading shows while compressing, then the compressed video gets downloaded into
 #    the folder the user picked.
@@ -41,15 +37,24 @@ def upload_video():
         return 'no video found', 400
 
     file = request.files['video_file']
-
-    # TODO: if the file has no name, this becomes empty and breaks. Check it first (like /convert does).
+    if file.filename == '':
+        return 'no selected file', 400
     filename = secure_filename(file.filename)
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    # TODO: the original upload and the compressed file stay in Upload_backend forever.
-    # Delete them after sending, or the folder fills up with big videos.
+
     file.save(input_path)
+    @after_this_request
+    def remove_files(response):
+        try:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+            if os.path.exists(output_path):
+                os.remove(output_path)
+        except  Exception as e:
+            print ("Error deleting temporary files: {e}")
+        return response 
+
     
-        
     # =========================================================================
     # TODO EARL & NISHKY: CUSTOM SAVE LOCATION FROM FRONTEND
     # The front-end sends 'dest_folder', but it's only the folder NAME (like 'nuod/'),
@@ -79,6 +84,17 @@ def upload_video():
         return 'Compression failed', 500
     
     # ======================================================================
+    # delete tempo files 
+    @after_this_request
+    def remove_files(response):
+        try:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+            if os.path.exists(output_path):
+                os.remove(output_path)
+        except Exception as e:
+            print(f"Error deleting temporary files: {e}")
+        return response
 
     return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4')
 
