@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file, send_from_directory, after
 from werkzeug.utils import secure_filename 
 from PyPDF2 import PdfMerger, PdfReader
 from flask_cors import CORS
+from pathlib import Path
 import os 
 import subprocess # this is for running the ffmpeg command in the terminal -EARL
 import uuid
@@ -205,27 +206,58 @@ def convert_document():
         return jsonify({'error': 'No filename provided.'}), 400
     filename = secure_filename(file.filename)
 
-    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(input_path)
+    if not filename:
+        return jsonify({'error': 'Invalid filename.'}), 400
+
+    allowed_extensions = ['.doc', '.docx', '.ppt', '.pptx', '.odt', '.odp']
+    if os.path.splitext(filename)[1].lower() not in allowed_extensions:
+        return jsonify({'error': 'Unsupported file type.'}), 400
+
+    temp_dir = tempfile.mkdtemp(prefix='convert_')
 
     try:
-        # TODO: this needs LibreOffice installed on the computer, and most don't have it.
-        # It will say 'file not found' and crash. Install it, or use another way to convert.
-        # Also add a catch below for when LibreOffice is missing.
-        subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', input_path, '--outdir', app.config['UPLOAD_FOLDER']], check=True)
-        output_filename = os.path.splitext(filename)[0] + '.pdf'
+        stored_filename = f'{uuid.uuid4()}_{filename}'
+        input_path = os.path.join(temp_dir, stored_filename)
+        file.save(input_path)
 
-    except subprocess.CalledProcessError as e:
-        print(f'Conversion failed: {e}')
+        if os.path.getsize(input_path) == 0:
+            return jsonify({'error': f'{filename} is empty.'}), 400
+        profile_path = os.path.join(temp_dir, 'lo_profile')
+
+        try:
+            subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', temp_dir, input_path], 
+                           check=True, capture_output=True, text=True, timeout=120)
+
+        except FileNotFoundError:
+            app.logger.exception('LibreOffice not found.')
+            return jsonify({'error': 'LibreOffice is not installed or not found.'}), 500
+
+        except subprocess.TimeoutExpired:
+            return jsonify({'error': 'Document conversion timed out.'}), 504
+
+        except subprocess.CalledProcessError:
+            app.logger.exception('Document conversion failed.')
+            return jsonify({'error': 'Document conversion failed.'}), 500
+
+        output_filename = os.path.splitext(stored_filename)[0] + '.pdf'
+        output_path = os.path.join(temp_dir, output_filename)
+
+        if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            return jsonify({'error': 'Converted PDF not created.'}), 500
+        download_filename = os.path.splitext(filename)[0] + '.pdf'
+
+        response = send_file(output_path, mimetype='application/pdf', as_attachment=True, download_name=download_filename)
+        response.call_on_close(lambda path=temp_dir: shutil.rmtree(path, ignore_errors=True))
+        temp_dir = None
+        return response
+
+    except Exception:
+        app.logger.exception('Document conversion failed.')
         return jsonify({'error': 'Document conversion failed.'}), 500
-    
-    #removed the redundant line
-    output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
 
-    if not os.path.exists(output_path):
-        return jsonify({'error': 'Converted PDF not found.'}), 500
-
-    return jsonify({'download_url': f'/Upload_backend/{output_filename}'})
+    finally:
+        if temp_dir is not None:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -723,14 +723,60 @@ docCancelBtn.addEventListener('click', () => {
     showDocScreen('upload');
 });
 
-// Placeholder for Convert Action
-btnDocConvert.addEventListener('click', () => {
-    // TODO TEAMMATE: Connect to Python's /convert route!
-    // 1. Create a new FormData()
-    // 2. Append the selectedDocFiles[0] to it
-    // 3. Use fetch('http://127.0.0.1:5000/convert', ...) to send it to Python
-    // 4. Handle the JSON response (e.g., showing a download link!)
-    alert("This will send " + selectedDocFiles.length + " file(s) to Python to convert to PDF/DOC/PPT!");
+// Document Converter
+btnDocConvert.addEventListener('click', async () => {
+    if (selectedDocFiles.length !== 1) {
+        alert("Please select exactly one document to convert.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('doc_file', selectedDocFiles[0]);
+
+    try {
+        btnDocConvert.style.pointerEvents = 'none';
+
+        const response = await fetch(
+            'http://127.0.0.1:5000/convert',
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
+
+        if (!response.ok) {
+            let message = 'Document conversion failed';
+
+            try {
+                const data = await response.json();
+                message = data.error || message;
+            } catch {}
+
+            throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const fileName = selectedDocFiles[0].name.replace(/\.[^/.]+$/, '') + '.pdf';
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => {
+            URL.revokeObjectURL(downloadUrl);
+        }, 1000);
+
+    } catch (error) {
+        console.error('Conversion error:', error);
+        alert(error.message);
+
+    } finally {
+        btnDocConvert.style.pointerEvents = '';
+    }
 });
 
 //merger
