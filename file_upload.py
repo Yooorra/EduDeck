@@ -21,7 +21,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 
 # =========================================================================
-# TODO EARL & NISHKY: VIDEO COMPRESSOR
+# TODO: VIDEO COMPRESSOR
 # 1. Only works on Earl's PC side. FFmpeg has to be installed on the PC that runs this,
 #    if not, it crashes. Add a try/except for when FFmpeg is missing.
 # 2. It does compress, but the file only appears inside the project's folder, not in the    
@@ -57,7 +57,7 @@ def upload_video():
 
     
     # =========================================================================
-    # TODO EARL & NISHKY: CUSTOM SAVE LOCATION FROM FRONTEND
+    # TODO: CUSTOM SAVE LOCATION FROM FRONTEND
     # The front-end sends 'dest_folder', but it's only the folder NAME (like 'nuod/'),
     # not the full path (browsers don't share the full path). So Python can't tell where it really is.
     # If you do os.makedirs(dest_folder), it just makes a new 'nuod' folder inside the project!

@@ -1,6 +1,6 @@
 """
 =============================================================================
-EduDeck - Student Authentication & SQLite Database Structure
+EduDeck - Student Authentication & SQLite Database Structure | DO NOT TOUCH PO MUNA TY
 =============================================================================
 This file is a starter snippet for the SQLite database.
 It is separated from file_upload.py to keep the project clean and organized.
