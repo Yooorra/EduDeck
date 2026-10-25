@@ -193,8 +193,6 @@ def serve_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
     
 #document converter
-# TODO: this only makes PDFs, but the website says 'To .pdf, .doc, or .ppt'.
-# Either add the other formats or change the website text to PDF only.
 @app.route('/convert', methods=['POST'])
 def convert_document():
 
@@ -224,13 +222,24 @@ def convert_document():
             return jsonify({'error': f'{filename} is empty.'}), 400
         profile_path = os.path.join(temp_dir, 'lo_profile')
 
-        try:
-            subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', temp_dir, input_path], 
-                           check=True, capture_output=True, text=True, timeout=120)
+        soffice = shutil.which('soffice') or shutil.which('libreoffice')
 
-        except FileNotFoundError:
-            app.logger.exception('LibreOffice not found.')
+        if not soffice:
+            for path in [
+                r'C:\Program Files\LibreOffice\program\soffice.exe',
+                r'C:\Program Files (x86)\LibreOffice\program\soffice.exe'
+            ]:
+                if os.path.isfile(path):
+                    soffice = path
+                    break
+
+        if not soffice:
+            app.logger.error('LibreOffice not found.')
             return jsonify({'error': 'LibreOffice is not installed or not found.'}), 500
+
+        try:
+            subprocess.run([soffice,'--headless',f'-env:UserInstallation={Path(profile_path).as_uri()}','--convert-to', 'pdf','--outdir', temp_dir, input_path
+                ],check=True, capture_output=True, text=True, timeout=120)
 
         except subprocess.TimeoutExpired:
             return jsonify({'error': 'Document conversion timed out.'}), 504
