@@ -31,6 +31,20 @@ if not os.path.exists(UPLOAD_FOLDER):
 # 3. The page blinks a few times while it compresses. This is probably VS Code Live Server
 #    refreshing the page because new files keep appearing inside the project folder.
 #    Save the files outside the project folder (like a temp folder) and it should stop.
+
+# this is the temporary folder, so the live server does not refresh the page -EARL
+TEMP_FOLDER = os.path.join(tempfile.gettempdir(), 'edudeck_temp')
+os.makedirs(TEMP_FOLDER, exist_ok=True)
+
+
+def _cleanup(*paths):
+    for p in paths:
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+        except Exception as e:
+            print(f"Error deleting temporary file: {e}")
+            
 # =========================================================================
 @app.route('/compress', methods=['POST'])
 def upload_video():
@@ -40,22 +54,18 @@ def upload_video():
     file = request.files['video_file']
     if file.filename == '':
         return 'no selected file', 400
+
+ # FFmpeg must be installed on the PC running this server- EARL
+    if shutil.which('ffmpeg') is None:
+        return jsonify({'error': 'FFmpeg is not installed on the server PC.'}), 500
+
+    job_id = uuid.uuid4().hex
     filename = secure_filename(file.filename)
-    input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
+    output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
+    input_path = os.path.join(TEMP_FOLDER, f'{job_id}_{filename}')
+    output_path = os.path.join(TEMP_FOLDER, f'{job_id}_{output_filename}')
     file.save(input_path)
-    @after_this_request
-    def remove_files(response):
-        try:
-            if os.path.exists(input_path):
-                os.remove(input_path)
-            if os.path.exists(output_path):
-                os.remove(output_path)
-        except  Exception as e:
-            print ("Error deleting temporary files: {e}")
-        return response 
 
-    
     # =========================================================================
     # TODO: CUSTOM SAVE LOCATION FROM FRONTEND
     # The front-end sends 'dest_folder', but it's only the folder NAME (like 'nuod/'),
@@ -67,37 +77,35 @@ def upload_video():
     # =========================================================================
 
     #ffmpeg command to compress the video with good quality -EARL
-    output_filename = 'compressed_' + os.path.splitext(filename)[0] + '.mp4'
-    output_path = os.path.join(app.config['UPLOAD_FOLDER'], output_filename)
-
     command = [
-        'ffmpeg', '-y', '-i', input_path,
-        '-c:v', 'libx264', '-crf', '28', '-preset', 'medium',
-        '-c:a', 'aac', '-b:a', '128k',
-        '-movflags', '+faststart',
-        output_path
-    ]
-    result = subprocess.run(command, capture_output=True, text=True)
+           'ffmpeg', '-y', '-i', input_path,
+           '-vf', "scale='min(1280,iw)':-2",
+           '-c:v', 'libx264', '-crf', '30', '-preset', 'medium',
+           '-c:a', 'aac', '-b:a', '96k',
+           '-movflags', '+faststart',
+           output_path
+       ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True)
+    except FileNotFoundError:
+        _cleanup(input_path, output_path)
+        return jsonify({'error': 'FFmpeg could not be found.'}), 500
 
-    # If the ffmpeg failed, it will print the error and tell the browser that the compression failed - EARL
     if result.returncode != 0:
-        print(result.stderr)
-        return 'Compression failed', 500
-    
-    # ======================================================================
-    # delete tempo files 
-    @after_this_request
-    def remove_files(response):
-        try:
-            if os.path.exists(input_path):
-                os.remove(input_path)
-            if os.path.exists(output_path):
-                os.remove(output_path)
-        except Exception as e:
-            print(f"Error deleting temporary files: {e}")
-        return response
+        print('FFmpeg failed:', result.stderr)
+        _cleanup(input_path, output_path)
+        return jsonify({'error': 'Compression failed.'}), 500
 
-    return send_file(output_path, as_attachment=True, download_name='compressed_video.mp4')
+    # Never gonna return a bigger file than the original-EARL
+    send_path = output_path
+    if os.path.getsize(output_path) >= os.path.getsize(input_path):
+        send_path = input_path
+
+    response = send_file(send_path, as_attachment=True,
+                         download_name=output_filename, mimetype='video/mp4')
+    # Delete temporary files after the file has been fully sent-EARL
+    response.call_on_close(lambda: _cleanup(input_path, output_path))
+    return response
 
 # =========================================================================
 # TODO TEAMMATES: PDF / DOCUMENT MERGER
