@@ -24,7 +24,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # TODO: VIDEO COMPRESSOR
 # 1. Only works on Earl's PC side. FFmpeg has to be installed on the PC that runs this,
 #    if not, it crashes. Add a try/except for when FFmpeg is missing.
-# 2. It does compress, but the file only appears inside the project's folder, not in the    
+# 2. It does compress, but the file only appears inside the project's folder, not in the
 #    browser's downloading tab. Make it sync with the loading screen that was added:
 #    loading shows while compressing, then the compressed video gets downloaded into
 #    the folder the user picked.
@@ -48,16 +48,22 @@ def _cleanup(*paths):
 # =========================================================================
 @app.route('/compress', methods=['POST'])
 def upload_video():
+    ffmpeg = shutil.which('ffmpeg')
+    if not ffmpeg and os.environ.get('LOCALAPPDATA'):
+        winget_packages = Path(os.environ['LOCALAPPDATA']) / 'Microsoft' / 'WinGet' / 'Packages'
+        ffmpeg_candidates = sorted(winget_packages.glob('Gyan.FFmpeg_*/*/bin/ffmpeg.exe'))
+        ffmpeg = next((str(path) for path in ffmpeg_candidates if path.is_file()), None)
+
+    if not ffmpeg:
+        app.logger.error('FFmpeg executable not found on PATH.')
+        return jsonify({'error': 'FFmpeg was not found. Install it and add its bin folder to PATH, then restart the Python server.'}), 500
+
     if 'video_file' not in request.files:
-        return 'no video found', 400
+        return jsonify({'error': 'No video file found.'}), 400
 
     file = request.files['video_file']
     if file.filename == '':
-        return 'no selected file', 400
-
- # FFmpeg must be installed on the PC running this server- EARL
-    if shutil.which('ffmpeg') is None:
-        return jsonify({'error': 'FFmpeg is not installed on the server PC.'}), 500
+        return jsonify({'error': 'No file selected.'}), 400
 
     job_id = uuid.uuid4().hex
     filename = secure_filename(file.filename)
@@ -76,23 +82,23 @@ def upload_video():
     #   2. Or skip the custom folder and let the browser download it (the Download button already does).
     # =========================================================================
 
-    #ffmpeg command to compress the video with good quality -EARL
+    # ffmpeg command to compress the video with good quality -EARL
     command = [
-           'ffmpeg', '-y', '-i', input_path,
-           '-vf', "scale='min(1280,iw)':-2",
-           '-c:v', 'libx264', '-crf', '30', '-preset', 'medium',
-           '-c:a', 'aac', '-b:a', '96k',
-           '-movflags', '+faststart',
-           output_path
-       ]
+        ffmpeg, '-y', '-i', input_path,
+        '-vf', "scale='min(1280,iw)':-2",
+        '-c:v', 'libx264', '-crf', '30', '-preset', 'medium',
+        '-c:a', 'aac', '-b:a', '96k',
+        '-movflags', '+faststart',
+        output_path
+    ]
     try:
         result = subprocess.run(command, capture_output=True, text=True)
-    except FileNotFoundError:
+    except (FileNotFoundError, OSError):
         _cleanup(input_path, output_path)
-        return jsonify({'error': 'FFmpeg could not be found.'}), 500
+        return jsonify({'error': 'FFmpeg could not be started. Check that it is installed and available on PATH.'}), 500
 
     if result.returncode != 0:
-        print('FFmpeg failed:', result.stderr)
+        app.logger.error('FFmpeg compression failed: %s', result.stderr)
         _cleanup(input_path, output_path)
         return jsonify({'error': 'Compression failed.'}), 500
 

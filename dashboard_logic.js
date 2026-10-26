@@ -597,9 +597,19 @@ videoCompressBtn.addEventListener('click', () => {
         method: 'POST',
         body: formData
     })
-        .then(response => {
+        .then(async response => {
             if (!response.ok) {
-                throw new Error('Server returned error status: ' + response.status);
+                let message = 'Server returned error status: ' + response.status;
+                try {
+                    const data = await response.json();
+                    message = data.error || message;
+                } catch {
+                    try {
+                        const text = await response.text();
+                        message = text || message;
+                    } catch {}
+                }
+                throw new Error(message);
             }
             return response.blob();
         })
@@ -627,7 +637,7 @@ videoCompressBtn.addEventListener('click', () => {
         })
         .catch(error => {
             console.error('Compression Error:', error);
-            alert("An error occurred during compression. Make sure the Python server is running.");
+            alert(error.message || "An error occurred during compression. Make sure the Python server is running.");
             showVideoScreen('upload');
         });
 });
@@ -750,7 +760,7 @@ btnDocConvert.addEventListener('click', async () => {
             try {
                 const data = await response.json();
                 message = data.error || message;
-            } catch {}
+            } catch { }
 
             throw new Error(message);
         }
@@ -806,8 +816,8 @@ btnDocMerge.addEventListener('click', async () => {
 
         if (!response.ok) {
             let message = 'Document merging failed';
-            try {const data = await response.json(); message = data.error || message;}
-            catch{}
+            try { const data = await response.json(); message = data.error || message; }
+            catch { }
             throw new Error(message);
         }
 
@@ -819,7 +829,7 @@ btnDocMerge.addEventListener('click', async () => {
         document.body.appendChild(link);
         link.click();
         link.remove();
-        setTimeout(() => {URL.revokeObjectURL(downloadUrl);}, 1000);
+        setTimeout(() => { URL.revokeObjectURL(downloadUrl); }, 1000);
 
     } catch (error) {
         console.error('Merging error: ', error);

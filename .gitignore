@@ -25,3 +25,4 @@ ENV/
 # Other
 *.log
 *.db
+Upload_backend/
