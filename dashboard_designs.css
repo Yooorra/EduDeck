@@ -1,25 +1,20 @@
-/* Global Variables */
+/* Colors & theme variables */
 :root {
-    /* Backgrounds */
     --bg-color: #f8f9fc;
     --surface-color: #ffffff;
 
-    /* Text Colors */
     --text-main: #1f1f1f;
     --text-muted: #757575;
 
-    /* School Colors (BULSU) */
+    /* BulSU colors */
     --school-red: #d32f2f;
     --school-orange: #f57c00;
 
-    /* Borders and Shadows */
     --border-color: #e0e0e0;
     --card-shadow: 0px 4px 15px rgba(0, 0, 0, 0.05);
     --radius-lg: 20px;
-    /* Smooth, rounded corners */
 }
 
-/* Browser Ressetter & Global Font */
 * {
     margin: 0;
     padding: 0;
@@ -121,13 +116,31 @@ body {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-auto-flow: row dense;
-    gap: 30px;
-    align-items: start;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
 }
 
-/* Widget Boxes for the sections */
+@media (max-width: 1180px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 780px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 3 separate columns so cards stack nicely with no big empty gaps */
+.dashboard-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 220px;
+}
+
 .widget {
     background-color: var(--surface-color);
     border-radius: var(--radius-lg);
@@ -137,26 +150,15 @@ body {
     flex-direction: column;
 }
 
-/* Flexible Grid Placements for Drag & Drop */
-/* Flexible Grid Placements for Drag & Drop */
-.scheduler,
-.quick-notes {
-    grid-row: span 2;
-    /* The outer card can grow up to this height, but we DO NOT set overflow-y here, 
-       otherwise the dropdown menu gets cut off */
-    max-height: calc(100vh - 140px);
-}
-
-/* Inner scrollable areas */
+/* scrollable inside Scheduler & Quick Notes */
 .scheduler-main-view,
 .notes-main-view {
     overflow-y: auto;
-    flex: 1;
+    max-height: 340px;
     min-height: 0;
-    /* Important for flex children to allow scrolling */
 }
 
-/* Hide ugly default Windows scrollbar tracks for a premium feel */
+/* thin scrollbar */
 .scheduler-main-view::-webkit-scrollbar,
 .notes-main-view::-webkit-scrollbar {
     width: 6px;
@@ -178,26 +180,20 @@ body {
     background-color: #9ca3af;
 }
 
-.compressor,
-.doc-tools {
-    grid-row: span 1;
-}
-
-/* Widget headers (top row of each widget) */
+/* top row of each card (grab here to drag) */
 .widget-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
     cursor: grab;
-    /* Shows the user they can drag it */
 }
 
 .widget-header:active {
     cursor: grabbing;
 }
 
-/* Sortable Drag & Drop Styling */
+/* card look while dragging */
 .sortable-ghost {
     opacity: 0.4;
     background-color: #f9fafb;
@@ -215,7 +211,6 @@ body {
     color: var(--text-main);
 }
 
-/* Widget Subheaders (e.g., "UPCOMING TASKS") */
 .widget-subheader {
     display: flex;
     justify-content: space-between;
@@ -231,7 +226,6 @@ body {
     font-weight: 600;
     color: var(--text-main);
     letter-spacing: 0.5px;
-    /* Spreads out the ALL CAPS text slightly so it looks premium */
 }
 
 .subheader-actions,
@@ -269,7 +263,7 @@ body {
     color: var(--text-muted);
 }
 
-/* Orange Action Buttons */
+/* orange buttons */
 .browse-btn,
 .compress-btn {
     background-color: var(--school-orange);
@@ -301,20 +295,17 @@ body {
     flex-shrink: 0;
     cursor: pointer;
     position: relative;
-    /* Anchors the color picker popup here */
 }
 
-/* Fixes the native color picker jumping to the top of the screen */
+/* keeps the hidden color input right on top of the colored strip */
 .color-picker-input.hidden {
     display: block !important;
-    /* Overrides our global hidden class */
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
-    /* Invisible, but physically covers the line */
     cursor: pointer;
 }
 
@@ -332,7 +323,6 @@ body {
     align-items: center;
 }
 
-/* Text Styling */
 .task-title,
 .note-text {
     font-size: 14px;
@@ -346,12 +336,10 @@ body {
     color: var(--text-muted);
 }
 
-/* Task Status */
 .task-status {
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Space between the dot and the text */
     font-size: 12px;
     color: var(--text-main);
     font-weight: 500;
@@ -361,16 +349,12 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    /* Makes the dot a perfect circle */
 }
 
-/* Hidden Class (Javascript) */
 .hidden {
     display: none !important;
-    /* Instantly hides anything with this class. Extremely important for our popups later! */
 }
 
-/* Icon Sizes */
 .icon-btn img,
 .dropdown-icon {
     width: 20px;
@@ -399,26 +383,23 @@ body {
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* Makes the sidebar icons light up when hovered! */
 .sidebar a:hover img {
     opacity: 1;
     transform: scale(1.08);
 }
 
-/* The Active Sidebar Item (Home or Calendar) */
 .sidebar a.active {
     background-color: #fff0e6;
     border-left: 4px solid var(--school-orange);
 }
 
-/* Magic CSS Filter to turn black SVGs into Orange (#f57c00) */
+/* turns black SVG icons into BulSU orange (#f57c00) */
 .sidebar a.active img,
 .upload-icon {
     opacity: 1;
     filter: invert(52%) sepia(90%) saturate(1450%) hue-rotate(1deg) brightness(102%) contrast(97%);
 }
 
-/* Dashboard Header (Title and Status) */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -432,7 +413,6 @@ body {
     color: var(--text-main);
 }
 
-/* Fixes the giant Offline / Online Icons */
 .status-badge img {
     width: 18px;
     height: 18px;
@@ -453,15 +433,14 @@ body {
     color: var(--school-red);
 }
 
-/* Hides the online badge by default so they don't both show at once */
+/* hidden at first so offline & online don't both show */
 .status-badge.online {
     display: none;
 }
 
-/* mooth Dropdown Menus */
+/* "..." dropdown menus */
 .more-options-container {
     position: relative;
-    /* Anchors the floating menu exactly below the '...' button */
 }
 
 .dropdown-menu {
@@ -469,40 +448,31 @@ body {
     top: 100%;
     right: 0;
     background-color: var(--surface-color);
-    /* Crisp white */
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    /* Smooth rounded corners */
     box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.08);
-    /* A soft shadow so it floats above the page */
     display: flex;
     flex-direction: column;
     padding: 8px 0;
     min-width: 150px;
     z-index: 50;
-    /* Ensures it stays on top of everything else */
     margin-top: 8px;
-    /* Slight gap from the button */
 
-    /* Smooth motion setup (This is its VISIBLE state) */
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
     transition: all 0.2s ease-in-out;
 }
 
-/* When Javascript hides the menu (This is its INVISIBLE state) */
+/* overrides .hidden so the menu can fade/slide closed */
 .dropdown-menu.hidden {
     display: flex !important;
-    /* Overrides global hidden class to animate it! */
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
     transform: translateY(-10px);
-    /* Slides it up slightly so it drops down when opened */
 }
 
-/* Buttons inside the list */
 .menu-item {
     background: none;
     border: none;
@@ -513,23 +483,19 @@ body {
     color: var(--text-main);
     cursor: pointer;
     transition: all 0.2s ease;
-    /* Makes the hover effect smooth */
     width: 100%;
-    /* Stretches the button to fill the menu */
 }
 
-/* Hover effect */
 .menu-item:hover {
     background-color: #fff0e6;
     color: var(--school-orange);
 }
 
-/* 28. Confirm Remove Box */
+/* Confirm Remove box */
 .confirm-box {
     margin-top: 15px;
     padding: 15px;
     background-color: #fee2e2;
-    /* Light red */
     border: 1px solid #fca5a5;
     border-radius: 8px;
     display: flex;
@@ -551,22 +517,18 @@ body {
     background-color: #b91c1c;
 }
 
-/* 29. Drag and Drop Styles */
+/* dragging tasks & notes */
 .task-card.dragging {
     opacity: 0.5;
-    /* Makes the card semi-transparent when you are dragging it */
     box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
-    /* Adds a heavy shadow so it looks lifted */
     cursor: grabbing;
-    /* Changes the cursor to a closed hand */
 }
 
-/* Make sure all cards show the open hand cursor when hovering */
 .task-card {
     cursor: grab;
 }
 
-/* 30. Custom Calendar UI */
+/* Popup calendar inside Scheduler */
 .calendar-ui {
     background-color: var(--surface-color);
     border: 1px solid var(--border-color);
@@ -612,12 +574,10 @@ body {
 
 .calendar-day {
     aspect-ratio: 1;
-    /* Makes them perfectly square */
     display: flex;
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    /* Smooth circles */
     font-size: 14px;
     font-weight: 500;
     color: var(--text-main);
@@ -655,7 +615,6 @@ body {
     width: 20px;
     height: 20px;
     filter: invert(53%) sepia(85%) saturate(2250%) hue-rotate(3deg) brightness(103%) contrast(97%);
-    /* Orange */
 }
 
 .time-picker {
@@ -692,9 +651,7 @@ body {
     cursor: pointer;
 }
 
-/* 31. Smooth Animations for Calendar & Clicks */
-
-/* Swapping between the scheduler and the calendar */
+/* Animations */
 @keyframes viewFadeSlide {
     from {
         opacity: 0;
@@ -712,7 +669,6 @@ body {
     animation: viewFadeSlide 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
-/* The individual numbered days "popping" in when you swap months */
 @keyframes popIn {
     0% {
         opacity: 0;
@@ -729,7 +685,6 @@ body {
     animation: popIn 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
-/* Make buttons physically "squish" down when clicked for tactile feedback */
 .icon-btn:active,
 .confirm-date-btn:active,
 .cancel-date-btn:active,
@@ -738,9 +693,7 @@ body {
     transition: transform 0.1s;
 }
 
-/* 32. Advanced Logic UI */
-
-/* Custom Checkbox */
+/* Checkboxes for Remove mode */
 .task-title-group {
     display: flex;
     align-items: center;
@@ -754,10 +707,9 @@ body {
     cursor: pointer;
     flex-shrink: 0;
     display: none;
-    /* Hidden by default */
 }
 
-/* Shown only when widget is in remove mode */
+/* only show checkboxes while in remove mode */
 .widget.remove-mode .custom-checkbox {
     display: inline-flex;
 }
@@ -789,7 +741,6 @@ body {
     border-color: var(--school-orange);
 }
 
-/* Create the checkmark (hidden when not checked) */
 .checkmark:after {
     content: "";
     position: absolute;
@@ -807,7 +758,7 @@ body {
     display: block;
 }
 
-/* Shrink Animation for Deleting Cards */
+/* shrink animation when deleting tasks */
 @keyframes shrinkOut {
     to {
         opacity: 0;
@@ -822,10 +773,8 @@ body {
 .shrink-out {
     animation: shrinkOut 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
     pointer-events: none;
-    /* prevent clicks during death */
 }
 
-/* Calendar Slide Animations */
 @keyframes slideLeftIn {
     from {
         opacity: 0;
@@ -858,7 +807,7 @@ body {
     animation: slideRightIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
-/* Dropdown Shared Styles for Year and Time */
+/* Year & time dropdowns */
 .year-dropdown,
 .time-dropdown {
     position: absolute;
@@ -900,7 +849,6 @@ body {
     color: white;
 }
 
-/* Time Picker Dropdown */
 .time-display-btn {
     background: transparent;
     border: none;
@@ -930,12 +878,10 @@ body {
     max-height: 180px;
     overflow-y: auto;
     scrollbar-width: none;
-    /* Firefox */
 }
 
 .time-col::-webkit-scrollbar {
     display: none;
-    /* Chrome */
 }
 
 .time-option {
@@ -965,9 +911,7 @@ body {
     padding-left: 10px;
 }
 
-/* ========================================================================= */
-/* 40. Document Tools Widget */
-/* ========================================================================= */
+/* Document Tools */
 .doc-tools-view {
     display: flex;
     flex-direction: column;
@@ -1035,9 +979,7 @@ body {
     color: var(--text-light);
 }
 
-/* ========================================================================= */
-/* 41. Video Compressor Dynamic Views */
-/* ========================================================================= */
+/* Video Compressor screens */
 .video-view {
     display: flex;
     flex-direction: column;
@@ -1149,7 +1091,7 @@ body {
     flex-shrink: 0;
 }
 
-/* Loading View */
+/* loading screen */
 .video-loading-box {
     display: flex;
     flex-direction: column;
@@ -1212,7 +1154,7 @@ body {
     100% { transform: translateX(250%); }
 }
 
-/* Result / Finished View */
+/* finished screen */
 .video-result-box {
     background-color: #f0fdf4;
     border: 1px solid #bbf7d0;
@@ -1276,9 +1218,7 @@ body {
     color: var(--text-main);
 }
 
-/* ========================================================================= */
-/* 33. Login & Register Page Styles */
-/* ========================================================================= */
+/* Login & Register page */
 .login-wrapper {
     min-height: 100vh;
     display: flex;
@@ -1326,7 +1266,7 @@ body {
     margin-top: 4px;
 }
 
-/* Tabs switcher for Sign In / Register */
+/* Sign In / Register tabs */
 .auth-tabs {
     display: flex;
     background-color: #f1f3f7;
@@ -1355,7 +1295,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Form Groups and Inputs */
+/* inputs */
 .input-group {
     display: flex;
     flex-direction: column;
@@ -1435,7 +1375,7 @@ body {
     transform: scale(0.99);
 }
 
-/* Alert Notification Banner */
+/* red / green message box */
 .auth-alert {
     padding: 10px 14px;
     border-radius: 8px;
@@ -1477,7 +1417,7 @@ body {
     text-decoration: underline;
 }
 
-/* Prototype Demo Info Badge */
+/* demo account box */
 .demo-hint-box {
     margin-top: 22px;
     padding: 12px 14px;
@@ -1498,9 +1438,7 @@ body {
     font-size: 11px;
 }
 
-/* ========================================================================= */
-/* 42. Calendar Page View */
-/* ========================================================================= */
+/* Calendar page (from sidebar) */
 .calendar-page-view:not(.hidden),
 .dashboard-grid:not(.hidden) {
     animation: viewFadeSlide 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
@@ -1638,7 +1576,7 @@ body {
     background: transparent;
 }
 
-/* Task indicator dots on calendar days */
+/* small dots under day numbers */
 .cal-day-dots {
     display: flex;
     gap: 3px;
@@ -1694,7 +1632,7 @@ body {
     background-color: var(--school-red);
 }
 
-/* Right Side: Schedules from Scheduler */
+/* right side: task list */
 .schedules-counter-badge {
     background-color: #fff0e6;
     color: var(--school-orange);
@@ -1907,7 +1845,7 @@ body {
     filter: brightness(0) invert(1);
 }
 
-/* Pulse animation on Scheduler widget */
+/* glow when jumping from Calendar back to Scheduler */
 @keyframes schedulerHighlightPulse {
     0% { box-shadow: 0 0 0 0 rgba(245, 124, 0, 0.5); }
     50% { box-shadow: 0 0 0 12px rgba(245, 124, 0, 0); }
@@ -1916,4 +1854,1002 @@ body {
 
 .widget.scheduler.highlight-pulse {
     animation: schedulerHighlightPulse 1s ease-out 2;
+}
+
+/* Scroll arrows (^ and v) */
+.scroll-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* hide the wrapper too when scheduler swaps to its popup calendar */
+.scroll-wrap:has(> .scheduler-main-view.hidden) {
+    display: none !important;
+}
+
+.time-col-wrap {
+    flex: 0 0 auto;
+}
+
+.scroll-ind {
+    background: var(--school-orange);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 3px 12px;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(245, 124, 0, 0.35);
+    transition: opacity 0.2s ease, transform 0.15s ease, background-color 0.2s ease;
+    user-select: none;
+}
+
+/* floats in the middle so it doesn't get in the way */
+.scroll-wrap > .scroll-ind {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.scroll-wrap > .scroll-ind-up {
+    top: 4px;
+}
+
+.scroll-wrap > .scroll-ind-down {
+    bottom: 4px;
+}
+
+.scroll-wrap > .scroll-ind:hover {
+    background-color: var(--school-red);
+    transform: translateX(-50%) scale(1.08);
+}
+
+.scroll-wrap > .scroll-ind:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+/* smaller arrows for the narrow time picker columns */
+.time-col-wrap > .scroll-ind {
+    padding: 2px 8px;
+    font-size: 10px;
+}
+
+/* sticky arrows inside the year dropdown */
+.scroll-ind.sticky-ind {
+    position: sticky;
+    left: 0;
+    width: 100%;
+    border-radius: 0;
+    padding: 3px 0;
+    font-size: 10px;
+}
+
+.scroll-ind-up.sticky-ind {
+    top: 0;
+}
+
+.scroll-ind-down.sticky-ind {
+    bottom: 0;
+}
+
+.scroll-ind.sticky-ind:hover {
+    background-color: var(--school-red);
+}
+
+/* Dark mode */
+.dark-mode-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow);
+    transition: all 0.2s ease;
+}
+
+.dark-mode-btn:hover {
+    border-color: var(--school-orange);
+    background-color: #fff0e6;
+    transform: translateY(-1px);
+}
+
+.dark-mode-btn img {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s ease, filter 0.2s ease;
+}
+
+body.dark-mode {
+    --bg-color: #12141a;
+    --surface-color: #1c1f28;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border-color: #2e3442;
+    --card-shadow: 0px 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .top-header {
+    background-color: #171a22;
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-mode .dark-mode-btn {
+    background-color: rgba(245, 124, 0, 0.15);
+    border-color: var(--school-orange);
+}
+
+body.dark-mode .dark-mode-btn img {
+    /* turns moon icon orange when dark mode is on */
+    filter: invert(52%) sepia(90%) saturate(1450%) hue-rotate(1deg) brightness(102%) contrast(97%);
+    transform: rotate(-15deg);
+}
+
+/* flip black icons to light gray in dark mode */
+body.dark-mode .bell-btn img,
+body.dark-mode .dropdown-icon,
+body.dark-mode .widget-header .icon-btn img,
+body.dark-mode .widget-subheader .icon-btn img,
+body.dark-mode .category-actions .icon-btn img,
+body.dark-mode .sidebar a:not(.active) img,
+body.dark-mode .sched-due-icon,
+body.dark-mode .video-dest-icon,
+body.dark-mode .video-dest-btn-icon {
+    filter: invert(90%) brightness(105%);
+}
+
+body.dark-mode .sidebar a.active {
+    background-color: rgba(245, 124, 0, 0.15);
+}
+
+body.dark-mode .menu-item:hover,
+body.dark-mode .calendar-day:hover,
+body.dark-mode .year-option:hover,
+body.dark-mode .time-option:hover,
+body.dark-mode .cal-nav-btn:hover,
+body.dark-mode .cal-day-cell:hover:not(.empty):not(.other-month) {
+    background-color: rgba(245, 124, 0, 0.16);
+    color: var(--school-orange);
+}
+
+body.dark-mode .year-dropdown,
+body.dark-mode .time-dropdown {
+    background-color: var(--surface-color);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+body.dark-mode .time-display-btn:hover {
+    background-color: #2a2f3d;
+}
+
+body.dark-mode .time-selector,
+body.dark-mode .doc-file-info,
+body.dark-mode .video-dest-box,
+body.dark-mode .cal-today-btn {
+    background-color: #151820;
+    border-color: var(--border-color);
+}
+
+body.dark-mode .doc-action-card,
+body.dark-mode .video-dest-badge,
+body.dark-mode .video-dest-browse-btn,
+body.dark-mode .video-result-location {
+    background-color: #242936;
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+body.dark-mode .doc-action-card p {
+    color: var(--text-muted);
+}
+
+body.dark-mode .upload-zone {
+    border-color: #363d4e;
+    background-color: rgba(255, 255, 255, 0.01);
+}
+
+body.dark-mode .cancel-date-btn,
+body.dark-mode .video-secondary-btn {
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .video-secondary-btn:hover {
+    background-color: #262b38;
+}
+
+body.dark-mode .video-loading-box {
+    background-color: rgba(245, 124, 0, 0.08);
+    border-color: rgba(245, 124, 0, 0.4);
+}
+
+body.dark-mode .video-result-box {
+    background-color: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.35);
+}
+
+body.dark-mode .video-result-title {
+    color: #4ade80;
+}
+
+body.dark-mode .schedules-counter-badge,
+body.dark-mode .empty-icon-circle,
+body.dark-mode .sched-status-tag.scheduled {
+    background-color: rgba(245, 124, 0, 0.16);
+    border-color: rgba(245, 124, 0, 0.35);
+}
+
+body.dark-mode .sched-status-tag.doing {
+    background-color: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+}
+
+body.dark-mode .sched-status-tag.overdue,
+body.dark-mode .status-badge.offline,
+body.dark-mode .confirm-box {
+    background-color: rgba(211, 47, 47, 0.18);
+    border-color: rgba(211, 47, 47, 0.4);
+}
+
+body.dark-mode .cal-day-cell.empty,
+body.dark-mode .cal-day-cell.other-month {
+    color: #475569;
+}
+
+body.dark-mode .sortable-ghost {
+    background-color: #242936;
+}
+
+/* Settings page */
+.settings-page-view:not(.hidden) {
+    animation: viewFadeSlide 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 28px;
+    align-items: start;
+}
+
+.settings-card .widget-header {
+    cursor: default;
+}
+
+.settings-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 12px;
+    background-color: #f9fafb;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.settings-avatar-preview {
+    width: 64px;
+    height: 64px;
+    font-size: 20px;
+    flex-shrink: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid var(--school-orange);
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.settings-avatar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.settings-upload-label {
+    margin-top: 0;
+    display: inline-block;
+    text-align: center;
+    padding: 7px 14px;
+    font-size: 12px;
+}
+
+.settings-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.settings-toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
+.settings-item-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.settings-item-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.settings-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--school-orange);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.settings-slider-group {
+    margin-bottom: 14px;
+}
+
+.settings-slider-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 6px;
+}
+
+.settings-slider-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-range {
+    flex: 1;
+    accent-color: var(--school-orange);
+    cursor: pointer;
+}
+
+.settings-test-btn {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+    border: 1px solid #ffd8bf;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.settings-test-btn:hover {
+    background-color: var(--school-orange);
+    color: #ffffff;
+}
+
+/* LAN & Hotspot Settings */
+.lan-status-pill {
+    background-color: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.lan-status-pill.offline {
+    background-color: #fee2e2;
+    color: var(--school-red);
+}
+
+.lan-ip-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f9fafb;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.lan-ip-label {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.lan-ip-code {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.settings-sub-heading {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 14px 0 10px;
+}
+
+.peers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.peer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: #f9fafb;
+}
+
+.peer-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.peer-online-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    flex-shrink: 0;
+}
+
+.peer-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.peer-ip {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.peer-disconnect-btn {
+    background: none;
+    border: 1px solid #fca5a5;
+    color: var(--school-red);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.peer-disconnect-btn:hover {
+    background-color: var(--school-red);
+    color: #ffffff;
+}
+
+/* App & Storage Preferences */
+.settings-select {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 13.5px;
+    background-color: #fafbfc;
+    color: var(--text-main);
+    outline: none;
+    cursor: pointer;
+}
+
+.settings-select:focus {
+    border-color: var(--school-orange);
+}
+
+.settings-storage-box {
+    background-color: #f9fafb;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.storage-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.storage-bar-track {
+    width: 100%;
+    height: 7px;
+    background-color: #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--school-orange), var(--school-red));
+    border-radius: 8px;
+    transition: width 0.3s ease;
+}
+
+/* Account & Security */
+.password-collapse-box {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: #f9fafb;
+    margin-bottom: 14px;
+}
+
+.danger-zone-box {
+    padding: 14px;
+    border: 1px solid #fca5a5;
+    background-color: #fef2f2;
+    border-radius: 10px;
+}
+
+.danger-zone-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--school-red);
+    margin-bottom: 4px;
+}
+
+.danger-zone-desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+/* Flashcards */
+.widget.flashcards {
+    grid-row: span 1;
+}
+
+.flashcard-badge {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    border: 1px solid #ffd8bf;
+}
+
+.flashcard-view {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.flashcard-view:not(.hidden-view) {
+    animation: viewFadeSlide 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+.flashcard-upload-zone {
+    padding: 20px 16px;
+    margin-bottom: 10px;
+}
+
+/* subject selector row */
+.fc-category-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.fc-category-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fc-category-select {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: #f9fafb;
+    color: var(--text-main);
+    font-size: 12.5px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.fc-category-select:focus {
+    border-color: var(--school-orange);
+}
+
+.fc-cat-btn {
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.fc-cat-new-btn {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+    border: 1px solid #ffd8bf;
+}
+
+.fc-cat-new-btn:hover {
+    background-color: var(--school-orange);
+    color: #ffffff;
+}
+
+.fc-cat-del-btn {
+    background-color: #fef2f2;
+    color: var(--school-red);
+    border: 1px solid #fca5a5;
+}
+
+.fc-cat-del-btn:hover {
+    background-color: var(--school-red);
+    color: #ffffff;
+}
+
+.fc-new-cat-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fc-new-cat-row .fc-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.fc-cat-save-btn {
+    background-color: var(--school-orange);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.fc-cat-save-btn:hover {
+    background-color: #e65100;
+}
+
+.fc-cat-cancel-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.flashcard-bottom-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.fc-delete-card-btn {
+    background-color: #fef2f2;
+    color: var(--school-red);
+    border: 1px solid #fca5a5;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.fc-delete-card-btn:hover {
+    background-color: var(--school-red);
+    color: #ffffff;
+}
+
+.flashcard-quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.flashcard-sample-btn {
+    background-color: #fff0e6;
+    color: var(--school-orange);
+    border: 1px solid #ffd8bf;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.flashcard-sample-btn:hover {
+    background-color: var(--school-orange);
+    color: #ffffff;
+}
+
+.flashcard-manual-box {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 10px;
+    background-color: #f9fafb;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.flashcard-manual-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.fc-input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 12.5px;
+    background-color: var(--surface-color);
+    color: var(--text-main);
+    outline: none;
+}
+
+.fc-input:focus {
+    border-color: var(--school-orange);
+}
+
+.fc-add-btn {
+    background-color: var(--surface-color);
+    color: var(--school-orange);
+    border: 1px solid var(--school-orange);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fc-add-btn:hover {
+    background-color: var(--school-orange);
+    color: #ffffff;
+}
+
+/* quiz screen */
+.flashcard-quiz-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.flashcard-progress {
+    font-weight: 700;
+    color: var(--school-orange);
+}
+
+.flashcard-side-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.flashcard-stage {
+    border: 2px solid var(--school-orange);
+    border-radius: 14px;
+    background: linear-gradient(145deg, #ffffff, #fff8f2);
+    min-height: 165px;
+    padding: 20px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 12px;
+    box-shadow: 0 6px 16px rgba(245, 124, 0, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.flashcard-stage:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(245, 124, 0, 0.2);
+}
+
+.flashcard-stage.is-flipped {
+    border-color: var(--school-red);
+    background: linear-gradient(145deg, #ffffff, #fff5f5);
+}
+
+.flashcard-inner {
+    width: 100%;
+}
+
+.flashcard-back {
+    display: none;
+}
+
+.flashcard-stage.is-flipped .flashcard-front {
+    display: none;
+}
+
+.flashcard-stage.is-flipped .flashcard-back {
+    display: block;
+    animation: viewFadeSlide 0.22s ease forwards;
+}
+
+.fc-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: var(--school-orange);
+    background-color: #fff0e6;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
+.flashcard-stage.is-flipped .fc-tag {
+    color: var(--school-red);
+    background-color: #fee2e2;
+}
+
+.fc-term-text {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.35;
+}
+
+.fc-def-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+.flashcard-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.fc-ctrl-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--surface-color);
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fc-ctrl-btn:hover {
+    border-color: var(--school-orange);
+    color: var(--school-orange);
+}
+
+.fc-flip-btn {
+    background-color: var(--school-orange);
+    color: #ffffff;
+    border-color: var(--school-orange);
+}
+
+.fc-flip-btn:hover {
+    background-color: #e65100;
+    color: #ffffff;
+}
+
+/* dark mode fixes for Settings & Flashcards */
+body.dark-mode .settings-profile-row,
+body.dark-mode .lan-ip-box,
+body.dark-mode .peer-item,
+body.dark-mode .settings-storage-box,
+body.dark-mode .password-collapse-box,
+body.dark-mode .flashcard-manual-box {
+    background-color: #151820;
+    border-color: var(--border-color);
+}
+
+body.dark-mode .settings-select,
+body.dark-mode .fc-category-select,
+body.dark-mode .input-group input {
+    background-color: #151820;
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+body.dark-mode .settings-test-btn,
+body.dark-mode .flashcard-sample-btn,
+body.dark-mode .fc-cat-new-btn,
+body.dark-mode .flashcard-badge,
+body.dark-mode .lan-ip-code,
+body.dark-mode .fc-tag {
+    background-color: rgba(245, 124, 0, 0.16);
+    border-color: rgba(245, 124, 0, 0.35);
+    color: var(--school-orange);
+}
+
+body.dark-mode .fc-cat-del-btn,
+body.dark-mode .fc-delete-card-btn {
+    background-color: rgba(211, 47, 47, 0.15);
+    border-color: rgba(211, 47, 47, 0.4);
+    color: #f87171;
+}
+
+body.dark-mode .lan-status-pill {
+    background-color: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+}
+
+body.dark-mode .danger-zone-box {
+    background-color: rgba(211, 47, 47, 0.12);
+    border-color: rgba(211, 47, 47, 0.4);
+}
+
+body.dark-mode .storage-bar-track {
+    background-color: #2a2f3d;
+}
+
+body.dark-mode .flashcard-stage {
+    background: linear-gradient(145deg, #1e222d, #25201d);
+}
+
+body.dark-mode .flashcard-stage.is-flipped {
+    background: linear-gradient(145deg, #1e222d, #281d20);
+}
+
+body.dark-mode .flashcard-stage.is-flipped .fc-tag {
+    background-color: rgba(211, 47, 47, 0.2);
+    color: #f87171;
 }

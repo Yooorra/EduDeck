@@ -1,6 +1,6 @@
-/* 1. TOGGLE DROPDOWN MENUS */
+/* 1. Dropdown Menus */
 
-// Find ALL the "more options" containers on the page
+// grabs all the "..." menus + the profile menu in the top right
 const moreOptionContainers = document.querySelectorAll('.more-options-container');
 
 moreOptionContainers.forEach(container => {
@@ -46,15 +46,14 @@ const addCategoryBtn = document.getElementById('add-category-btn');
 
 if (addCategoryBtn) {
     addCategoryBtn.addEventListener('click', () => {
-        // 1. Make a photocopy of the Category blueprint
+        // copy the category template from HTML
         const newCategory = categoryTemplate.content.cloneNode(true);
 
-        // 2. Find the "+" button inside this specific new category
         const addTaskBtn = newCategory.querySelector('.add-btn');
         const taskList = newCategory.querySelector('.task-list');
         const taskTemplate = document.getElementById('task-card-template');
 
-        // 2b. Make the Toggle button minimize/maximize the task list
+        // arrow button to hide/show the tasks inside
         const toggleBtn = newCategory.querySelector('.toggle-btn');
         const toggleIcon = toggleBtn.querySelector('img');
         toggleBtn.addEventListener('click', () => {
@@ -67,16 +66,15 @@ if (addCategoryBtn) {
             }
         });
 
-        // 2c. Make the task list a sortable drop zone (Using SortableJS)
         enableDragAndDrop(taskList);
 
-        // 3. Hook up the "+" button so it adds Task Cards to THIS category
+        // "+" button adds a new task to this category
         addTaskBtn.addEventListener('click', () => {
             const newTaskFragment = taskTemplate.content.cloneNode(true);
             const newTaskCard = newTaskFragment.querySelector('.task-card');
             enableColorPicker(newTaskCard);
 
-            // Wire up the Bell button to open the Calendar
+            // bell button opens the date picker
             const bellBtn = newTaskCard.querySelector('.bell-btn');
             if (bellBtn) {
                 bellBtn.addEventListener('click', () => {
@@ -87,18 +85,13 @@ if (addCategoryBtn) {
             taskList.prepend(newTaskCard);
         });
 
-        // 3.5. Enable Category Master Checkbox
         enableCategoryMasterCheckbox(newCategory);
-
-        // 4. Add the new category to the top of the scheduler
         schedulerContainer.prepend(newCategory);
-
-        // 5. Hide the dropdown menu after clicking
         addCategoryBtn.closest('.dropdown-menu').classList.add('hidden');
     });
 }
 
-/* 4. MAGIC COLOR PICKER */
+/* 4. Card Color Picker */
 function enableColorPicker(cardElement) {
     const colorLine = cardElement.querySelector('.card-color-line');
     const colorInput = cardElement.querySelector('.color-picker-input');
@@ -278,6 +271,7 @@ if (nextBtn) {
 
 // clicking the "September 2026" text opens a list of years
 if (monthYearSelector && yearDropdown) {
+    const yearDownInd = yearDropdown.querySelector('.scroll-ind-down');
     for (let y = 2024; y <= 2035; y++) {
         const yearOpt = document.createElement('div');
         yearOpt.classList.add('year-option');
@@ -287,7 +281,11 @@ if (monthYearSelector && yearDropdown) {
             renderCalendar();
             yearDropdown.classList.add('hidden');
         });
-        yearDropdown.appendChild(yearOpt);
+        if (yearDownInd) {
+            yearDropdown.insertBefore(yearOpt, yearDownInd);
+        } else {
+            yearDropdown.appendChild(yearOpt);
+        }
     }
 
     monthYearSelector.addEventListener('click', () => {
@@ -410,7 +408,6 @@ if (confirmBtn) {
         const formattedDate = `${monthNames[selectedDate.getMonth()].substring(0, 3)} ${selectedDate.getDate()}, ${selectedHour}:${selectedMinute} ${selectedAmPm}`;
 
         if (currentActiveTaskCard) {
-            // Update Text
             const dueText = currentActiveTaskCard.querySelector('.task-due');
             if (dueText) dueText.textContent = formattedDate;
 
@@ -489,7 +486,8 @@ function showVideoScreen(name) {
 
 // orange highlight while a file is dragged over a drop zone
 function highlightZone(zone, on) {
-    zone.style.backgroundColor = on ? '#fff0e6' : '';
+    const isDark = document.body.classList.contains('dark-mode');
+    zone.style.backgroundColor = on ? (isDark ? 'rgba(245, 124, 0, 0.14)' : '#fff0e6') : '';
     zone.style.borderColor = on ? 'var(--school-orange)' : '';
 }
 
@@ -607,7 +605,7 @@ videoCompressBtn.addEventListener('click', () => {
                     try {
                         const text = await response.text();
                         message = text || message;
-                    } catch {}
+                    } catch { }
                 }
                 throw new Error(message);
             }
@@ -842,16 +840,54 @@ btnDocMerge.addEventListener('click', async () => {
 });
 
 /* 10. Draggable Custom Layout */
-const dashboardGrid = document.querySelector('.dashboard-grid');
+const dashboardCols = document.querySelectorAll('.dashboard-col');
 
-new Sortable(dashboardGrid, {
-    animation: 250,                  // how fast the cards slide around (ms)
-    easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-    ghostClass: 'sortable-ghost',    // class for the empty spot while dragging
-    dragClass: 'sortable-drag',      // class for the card being dragged
-    delay: 150,                      // wait a bit before dragging starts (for touch screens)
-    delayOnTouchOnly: true,
-    handle: '.widget-header'         // you can only drag a card by its header
+// saves where each card is placed so it stays that way after refresh
+function saveWidgetLayout() {
+    const layout = [];
+    dashboardCols.forEach(col => {
+        const ids = Array.from(col.querySelectorAll(':scope > .widget'))
+            .map(w => w.dataset.widgetId)
+            .filter(Boolean);
+        layout.push(ids);
+    });
+    localStorage.setItem('edudeck_widget_layout', JSON.stringify(layout));
+}
+
+function restoreWidgetLayout() {
+    const raw = localStorage.getItem('edudeck_widget_layout');
+    if (!raw || dashboardCols.length === 0) return;
+    try {
+        const layout = JSON.parse(raw);
+        if (!Array.isArray(layout)) return;
+        layout.forEach((colIds, colIndex) => {
+            const targetCol = dashboardCols[colIndex] || dashboardCols[0];
+            if (!Array.isArray(colIds)) return;
+            colIds.forEach(id => {
+                const widget = document.querySelector(`.widget[data-widget-id="${id}"]`);
+                if (widget && targetCol) {
+                    targetCol.appendChild(widget);
+                }
+            });
+        });
+    } catch (e) { }
+}
+
+restoreWidgetLayout();
+
+dashboardCols.forEach(col => {
+    new Sortable(col, {
+        group: 'dashboard-widgets',      // lets cards move between any column
+        animation: 220,                  // how fast the cards slide around (ms)
+        easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+        ghostClass: 'sortable-ghost',    // class for the empty spot while dragging
+        dragClass: 'sortable-drag',      // class for the card being dragged
+        delay: 150,                      // wait a bit before dragging starts (for touch screens)
+        delayOnTouchOnly: true,
+        handle: '.widget-header',        // drag a card by its header
+        emptyInsertThreshold: 40,
+        onEnd: saveWidgetLayout
+    });
 });
 
 /* 11. User Session & Logout */
@@ -886,12 +922,14 @@ if (logoutBtn) {
 
 /* 12. Calendar Page (the Calendar button in the sidebar) */
 
-// sidebar buttons + the two "pages" that swap places
+// sidebar buttons + the pages that swap places
 const navHomeBtn = document.getElementById('nav-home-btn');
 const navCalendarBtn = document.getElementById('nav-calendar-btn');
+const navSettingsBtn = document.getElementById('nav-settings-btn');
 const pageTitle = document.getElementById('page-title');
 const dashboardView = document.getElementById('dashboard-view');
 const calendarPageView = document.getElementById('calendar-page-view');
+const settingsPageView = document.getElementById('settings-page-view');
 
 // stuff inside the calendar page
 const calPrevBtn = document.getElementById('cal-page-prev-btn');
@@ -1096,13 +1134,15 @@ function drawTaskList(allTasks) {
     });
 }
 
-// 4. swapping between the Dashboard and the Calendar page
+// 4. swapping between Dashboard, Calendar, and Settings pages
 function showCalendarPage() {
     navHomeBtn.classList.remove('active');
+    if (navSettingsBtn) navSettingsBtn.classList.remove('active');
     navCalendarBtn.classList.add('active');
     pageTitle.textContent = 'CALENDAR';
 
     dashboardView.classList.add('hidden');
+    if (settingsPageView) settingsPageView.classList.add('hidden');
     calendarPageView.classList.remove('hidden');
 
     pickedDay = null;
@@ -1111,10 +1151,12 @@ function showCalendarPage() {
 
 function showDashboardPage(glowScheduler) {
     navCalendarBtn.classList.remove('active');
+    if (navSettingsBtn) navSettingsBtn.classList.remove('active');
     navHomeBtn.classList.add('active');
     pageTitle.textContent = 'DASHBOARD';
 
     calendarPageView.classList.add('hidden');
+    if (settingsPageView) settingsPageView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
 
     // makes the Scheduler card glow for a bit so the user sees where to add tasks
@@ -1168,3 +1210,798 @@ showAllBtn.addEventListener('click', () => {
     pickedDay = null;
     drawCalendarPage();
 });
+
+/* 13. Scroll Arrows (^ and v) */
+
+function setupScrollIndicators(scrollEl) {
+    if (!scrollEl) return;
+
+    const wrapper = scrollEl.closest('.scroll-wrap') || scrollEl;
+    const upBtn = wrapper.querySelector(':scope > .scroll-ind-up');
+    const downBtn = wrapper.querySelector(':scope > .scroll-ind-down');
+
+    if (!upBtn || !downBtn) return;
+
+    function updateIndicators() {
+        if (scrollEl.classList.contains('hidden') || scrollEl.clientHeight === 0) {
+            upBtn.classList.add('hidden');
+            downBtn.classList.add('hidden');
+            return;
+        }
+
+        // ^ only shows if you scrolled down, v only shows if there's more below
+        const canScrollUp = scrollEl.scrollTop > 0;
+        const canScrollDown = (scrollEl.scrollTop + scrollEl.clientHeight) < (scrollEl.scrollHeight - 2);
+
+        upBtn.classList.toggle('hidden', !canScrollUp);
+        downBtn.classList.toggle('hidden', !canScrollDown);
+    }
+
+    scrollEl.addEventListener('scroll', updateIndicators);
+
+    // clicking ^ or v nudges the list up/down a bit
+    upBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        scrollEl.scrollBy({ top: -60, behavior: 'smooth' });
+    });
+
+    downBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        scrollEl.scrollBy({ top: 60, behavior: 'smooth' });
+    });
+
+    // re-check when tasks/notes are added or hidden menus open
+    const observer = new MutationObserver(() => {
+        requestAnimationFrame(updateIndicators);
+    });
+    observer.observe(scrollEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+    if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(() => {
+            requestAnimationFrame(updateIndicators);
+        });
+        resizeObserver.observe(scrollEl);
+    }
+
+    requestAnimationFrame(updateIndicators);
+}
+
+// all the scrollable lists that get ^ and v
+const scrollableTargets = [
+    document.getElementById('hours-col'),
+    document.getElementById('minutes-col'),
+    document.querySelector('.year-dropdown'),
+    document.querySelector('.scheduler-main-view'),
+    document.querySelector('.notes-main-view'),
+    document.querySelector('.schedules-card-list')
+];
+
+scrollableTargets.forEach(target => setupScrollIndicators(target));
+
+/* 14. Dark Mode */
+const darkModeToggleBtn = document.getElementById('dark-mode-toggle');
+
+// keep dark mode on if it was already turned on before
+if (localStorage.getItem('edudeck_dark_mode') === 'true') {
+    document.body.classList.add('dark-mode');
+}
+
+if (darkModeToggleBtn) {
+    darkModeToggleBtn.addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('edudeck_dark_mode', isDark ? 'true' : 'false');
+    });
+}
+
+/* 15. Notification Sounds */
+
+// =========================================================================
+// SOUND EFFECT FILE PATHS | REMEMBER MO TOH SELF, SOUND EFFECTS TOH AH!!!
+// =========================================================================
+const connectedSound = new Audio('sounds/connected.mp3'); // put connected sound file here
+const alertSound = new Audio('sounds/alert.mp3');         // put alert sound file here
+
+// backup beep sound just in case the mp3 files aren't in the folder yet | placeholder toh ah
+function playFallbackBeep(type, volumeDecimal) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(type === 'connected' ? 660 : 520, ctx.currentTime);
+        if (type === 'connected') {
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+        }
+
+        gain.gain.setValueAtTime(Math.max(0.01, volumeDecimal * 0.25), ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.28);
+    } catch (e) { }
+}
+
+// plays 'connected' or 'alert' using whatever volume is set in Settings
+function playNotificationSound(type) {
+    const connectedVolSlider = document.getElementById('connected-sound-volume');
+    const alertVolSlider = document.getElementById('alert-sound-volume');
+
+    if (type === 'connected') {
+        const volPercent = connectedVolSlider ? Number(connectedVolSlider.value) : 80;
+        const volDecimal = Math.min(1, Math.max(0, volPercent / 100));
+        connectedSound.volume = volDecimal;
+        connectedSound.currentTime = 0;
+        connectedSound.play().catch(() => playFallbackBeep('connected', volDecimal));
+    } else if (type === 'alert') {
+        const volPercent = alertVolSlider ? Number(alertVolSlider.value) : 85;
+        const volDecimal = Math.min(1, Math.max(0, volPercent / 100));
+        alertSound.volume = volDecimal;
+        alertSound.currentTime = 0;
+        alertSound.play().catch(() => playFallbackBeep('alert', volDecimal));
+    }
+}
+
+/* 16. Settings Page (the gear icon in the sidebar) */
+const headerAvatar = document.querySelector('.user-profile .avatar');
+const headerUserName = document.querySelector('.user-profile .user-name');
+const settingsAvatarPreview = document.getElementById('settings-avatar-preview');
+const settingsAvatarInput = document.getElementById('settings-avatar-input');
+const settingsDisplayName = document.getElementById('settings-display-name');
+const settingsStudentId = document.getElementById('settings-student-id');
+const saveProfileBtn = document.getElementById('save-profile-btn');
+
+const connectedVolSlider = document.getElementById('connected-sound-volume');
+const connectedVolLabel = document.getElementById('connected-vol-label');
+const alertVolSlider = document.getElementById('alert-sound-volume');
+const alertVolLabel = document.getElementById('alert-vol-label');
+const testConnectedSoundBtn = document.getElementById('test-connected-sound-btn');
+const testAlertSoundBtn = document.getElementById('test-alert-sound-btn');
+
+const toggleHotspotSharing = document.getElementById('toggle-hotspot-sharing');
+const lanStatusPill = document.getElementById('lan-status-pill');
+const connectedPeersList = document.getElementById('connected-peers-list');
+
+const compressionPresetSelect = document.getElementById('settings-compression-preset');
+const storageUsageText = document.getElementById('storage-usage-text');
+const storageBarFill = document.getElementById('storage-bar-fill');
+const clearCacheBtn = document.getElementById('clear-cache-btn');
+
+const togglePasswordFormBtn = document.getElementById('toggle-password-form-btn');
+const passwordCollapseBox = document.getElementById('password-collapse-box');
+const savePasswordBtn = document.getElementById('save-password-btn');
+const deleteAccountBtn = document.getElementById('delete-account-btn');
+
+function getInitials(nameStr) {
+    const clean = (nameStr || 'Student').trim();
+    const words = clean.split(/\s+/);
+    if (words.length > 1) {
+        return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return clean.substring(0, 2).toUpperCase();
+}
+
+// updates the circle in the top right + the preview inside Settings
+function applyAvatarDisplay(imageDataUrl, fallbackName) {
+    const initials = getInitials(fallbackName);
+
+    [headerAvatar, settingsAvatarPreview].forEach(el => {
+        if (!el) return;
+        if (imageDataUrl) {
+            el.innerHTML = `<img src="${imageDataUrl}" alt="Profile Avatar">`;
+        } else {
+            el.textContent = initials;
+        }
+    });
+}
+
+// load saved name, profile pic, and sound volumes when the page opens
+(function loadSavedProfileAndSettings() {
+    let currentName = 'John Smith';
+    let currentId = '2024-0001';
+
+    const rawUser = localStorage.getItem('currentUser');
+    if (rawUser) {
+        try {
+            const parsed = JSON.parse(rawUser);
+            if (parsed.name) currentName = parsed.name;
+            if (parsed.username) currentId = parsed.username;
+        } catch (e) { }
+    }
+
+    if (settingsDisplayName) settingsDisplayName.value = currentName;
+    if (settingsStudentId) settingsStudentId.value = currentId;
+    if (headerUserName) headerUserName.textContent = currentName;
+
+    const savedAvatar = localStorage.getItem('edudeck_avatar');
+    applyAvatarDisplay(savedAvatar, currentName);
+
+    const savedConnVol = localStorage.getItem('edudeck_connected_vol');
+    if (savedConnVol !== null && connectedVolSlider && connectedVolLabel) {
+        connectedVolSlider.value = savedConnVol;
+        connectedVolLabel.textContent = `${savedConnVol}%`;
+    }
+
+    const savedAlertVol = localStorage.getItem('edudeck_alert_vol');
+    if (savedAlertVol !== null && alertVolSlider && alertVolLabel) {
+        alertVolSlider.value = savedAlertVol;
+        alertVolLabel.textContent = `${savedAlertVol}%`;
+    }
+
+    const savedPreset = localStorage.getItem('edudeck_compression_preset');
+    if (savedPreset && compressionPresetSelect) {
+        compressionPresetSelect.value = savedPreset;
+    }
+})();
+
+// rough check of how much browser storage is used
+function updateStorageUsageDisplay() {
+    if (!storageUsageText || !storageBarFill) return;
+    let totalBytes = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const val = localStorage.getItem(key) || '';
+        totalBytes += (key.length + val.length) * 2;
+    }
+    const kb = (totalBytes / 1024).toFixed(1);
+    const percent = Math.min(100, Math.max(4, Math.round((totalBytes / (5 * 1024 * 1024)) * 100)));
+    storageUsageText.textContent = `${kb} KB / 5 MB`;
+    storageBarFill.style.width = `${percent}%`;
+}
+
+// opens Settings without refreshing the page
+function showSettingsPage() {
+    navHomeBtn.classList.remove('active');
+    navCalendarBtn.classList.remove('active');
+    if (navSettingsBtn) navSettingsBtn.classList.add('active');
+    pageTitle.textContent = 'SETTINGS';
+
+    dashboardView.classList.add('hidden');
+    calendarPageView.classList.add('hidden');
+    if (settingsPageView) settingsPageView.classList.remove('hidden');
+
+    updateStorageUsageDisplay();
+}
+
+if (navSettingsBtn) {
+    navSettingsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        showSettingsPage();
+    });
+}
+
+// clicking "Profile" in the top-right menu opens Settings too
+document.querySelectorAll('.user-profile + .dropdown-menu .menu-item').forEach(btn => {
+    if (btn.textContent.trim() === 'Profile') {
+        btn.addEventListener('click', () => {
+            btn.closest('.dropdown-menu').classList.add('hidden');
+            showSettingsPage();
+        });
+    }
+});
+
+// 1. profile picture + name
+if (settingsAvatarInput) {
+    settingsAvatarInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64Url = event.target.result;
+            try {
+                localStorage.setItem('edudeck_avatar', base64Url);
+            } catch (err) {
+                alert('Image is too large to save in browser localStorage, but it will preview for this session.');
+            }
+            applyAvatarDisplay(base64Url, settingsDisplayName ? settingsDisplayName.value : 'Student');
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', () => {
+        const newName = (settingsDisplayName.value || '').trim() || 'John Smith';
+        const newId = (settingsStudentId.value || '').trim() || '2024-0001';
+
+        const updatedUser = { name: newName, username: newId };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+        if (headerUserName) headerUserName.textContent = newName;
+        applyAvatarDisplay(localStorage.getItem('edudeck_avatar'), newName);
+        updateStorageUsageDisplay();
+        alert('Profile updated successfully!');
+    });
+}
+
+// 2. sound volume sliders + test buttons
+if (connectedVolSlider && connectedVolLabel) {
+    connectedVolSlider.addEventListener('input', () => {
+        connectedVolLabel.textContent = `${connectedVolSlider.value}%`;
+        localStorage.setItem('edudeck_connected_vol', connectedVolSlider.value);
+    });
+}
+
+if (alertVolSlider && alertVolLabel) {
+    alertVolSlider.addEventListener('input', () => {
+        alertVolLabel.textContent = `${alertVolSlider.value}%`;
+        localStorage.setItem('edudeck_alert_vol', alertVolSlider.value);
+    });
+}
+
+if (testConnectedSoundBtn) {
+    testConnectedSoundBtn.addEventListener('click', () => {
+        playNotificationSound('connected');
+    });
+}
+
+if (testAlertSoundBtn) {
+    testAlertSoundBtn.addEventListener('click', () => {
+        playNotificationSound('alert');
+    });
+}
+
+// 3. hotspot toggle + connected classmates list
+if (toggleHotspotSharing && lanStatusPill) {
+    toggleHotspotSharing.addEventListener('change', () => {
+        const isActive = toggleHotspotSharing.checked;
+        lanStatusPill.textContent = isActive ? 'LAN Active' : 'Offline';
+        lanStatusPill.classList.toggle('offline', !isActive);
+
+        const connAlertsToggle = document.getElementById('toggle-conn-alerts');
+        if (isActive && (!connAlertsToggle || connAlertsToggle.checked)) {
+            playNotificationSound('connected');
+        }
+    });
+}
+
+if (connectedPeersList) {
+    connectedPeersList.querySelectorAll('.peer-disconnect-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const peerItem = btn.closest('.peer-item');
+            if (peerItem) peerItem.remove();
+        });
+    });
+}
+
+// 4. video preset + clear cache
+if (compressionPresetSelect) {
+    compressionPresetSelect.addEventListener('change', () => {
+        localStorage.setItem('edudeck_compression_preset', compressionPresetSelect.value);
+    });
+}
+
+if (clearCacheBtn) {
+    clearCacheBtn.addEventListener('click', () => {
+        localStorage.removeItem('edudeck_avatar');
+        localStorage.removeItem('edudeck_compression_preset');
+        applyAvatarDisplay(null, settingsDisplayName ? settingsDisplayName.value : 'John Smith');
+        updateStorageUsageDisplay();
+        alert('Offline cache cleared!');
+    });
+}
+
+// 5. password & delete account
+if (togglePasswordFormBtn && passwordCollapseBox) {
+    togglePasswordFormBtn.addEventListener('click', () => {
+        passwordCollapseBox.classList.toggle('hidden');
+    });
+}
+
+if (savePasswordBtn) {
+    savePasswordBtn.addEventListener('click', () => {
+        const curr = document.getElementById('sec-current-pass');
+        const next = document.getElementById('sec-new-pass');
+        if (!curr.value || !next.value) {
+            alert('Please fill in both current and new password fields.');
+            return;
+        }
+        curr.value = '';
+        next.value = '';
+        passwordCollapseBox.classList.add('hidden');
+        alert('Password updated successfully!');
+    });
+}
+
+if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', () => {
+        const sure = confirm('Are you sure you want to delete your account on this device? This action cannot be undone.');
+        if (sure) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('edudeck_avatar');
+            window.location.href = 'login_page.html';
+        }
+    });
+}
+
+/* 17. Flashcards */
+const fcSetupView = document.getElementById('flashcard-setup-view');
+const fcQuizView = document.getElementById('flashcard-quiz-view');
+const fcDeckCountBadge = document.getElementById('flashcard-deck-count');
+
+const fcCategorySelect = document.getElementById('fc-category-select');
+const fcNewCatBtn = document.getElementById('fc-new-cat-btn');
+const fcDelCatBtn = document.getElementById('fc-del-cat-btn');
+const fcNewCatRow = document.getElementById('fc-new-cat-row');
+const fcNewCatInput = document.getElementById('fc-new-cat-input');
+const fcSaveCatBtn = document.getElementById('fc-save-cat-btn');
+const fcCancelCatBtn = document.getElementById('fc-cancel-cat-btn');
+
+const fcUploadZone = document.getElementById('flashcard-upload-zone');
+const fcUploadText = document.getElementById('flashcard-upload-text');
+const fcBrowseBtn = document.getElementById('flashcard-browse-btn');
+const fcFileInput = document.getElementById('flashcard-file-input');
+const fcSampleBtn = document.getElementById('flashcard-sample-btn');
+const fcStartBtn = document.getElementById('flashcard-start-btn');
+
+const fcManualTerm = document.getElementById('fc-manual-term');
+const fcManualDef = document.getElementById('fc-manual-def');
+const fcManualAddBtn = document.getElementById('fc-manual-add-btn');
+
+const fcProgress = document.getElementById('flashcard-progress');
+const fcSideHint = document.getElementById('flashcard-side-hint');
+const fcBox = document.getElementById('flashcard-box');
+const fcTermDisplay = document.getElementById('fc-term-display');
+const fcDefDisplay = document.getElementById('fc-def-display');
+const fcPrevBtn = document.getElementById('fc-prev-btn');
+const fcFlipBtn = document.getElementById('fc-flip-btn');
+const fcNextBtn = document.getElementById('fc-next-btn');
+const fcBackSetupBtn = document.getElementById('fc-back-setup-btn');
+const fcDeleteCardBtn = document.getElementById('fc-delete-card-btn');
+
+// sample cards so it can be tested right away
+const sampleReviewerDeck = [
+    { term: 'HTTP (HyperText Transfer Protocol)', definition: 'The foundation of data communication for the World Wide Web.' },
+    { term: 'SQLite', definition: 'A lightweight, file-based relational database built right into Python.' },
+    { term: 'FFmpeg', definition: 'A command-line multimedia framework used to compress and convert video/audio files.' },
+    { term: 'LAN (Local Area Network)', definition: 'A local network connecting computers within a classroom or mobile hotspot without internet.' },
+    { term: 'DOM (Document Object Model)', definition: 'A tree structure of HTML elements that JavaScript can change dynamically.' }
+];
+
+const FC_STORAGE_KEY = 'edudeck_flashcard_categories';
+let fcCategories = {};        // { "Web Dev": [ {term, definition}, ... ] }
+let currentCategory = '';
+let flashcardDeck = [];
+let currentCardIndex = 0;
+
+// loads saved subjects from localStorage (makes a default one if empty)
+function loadFlashcardCategories() {
+    const raw = localStorage.getItem(FC_STORAGE_KEY);
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+                fcCategories = parsed;
+            }
+        } catch (e) { }
+    }
+    if (Object.keys(fcCategories).length === 0) {
+        fcCategories = {
+            'General Reviewer': []
+        };
+    }
+    const names = Object.keys(fcCategories);
+    if (!currentCategory || !fcCategories[currentCategory]) {
+        currentCategory = names[0];
+    }
+    flashcardDeck = fcCategories[currentCategory] || [];
+    renderCategoryDropdown();
+    updateDeckBadge();
+}
+
+function saveFlashcardCategories() {
+    if (currentCategory) {
+        fcCategories[currentCategory] = flashcardDeck;
+    }
+    localStorage.setItem(FC_STORAGE_KEY, JSON.stringify(fcCategories));
+    renderCategoryDropdown();
+    updateDeckBadge();
+}
+
+function renderCategoryDropdown() {
+    if (!fcCategorySelect) return;
+    fcCategorySelect.innerHTML = '';
+    Object.keys(fcCategories).forEach(catName => {
+        const count = (fcCategories[catName] || []).length;
+        const opt = document.createElement('option');
+        opt.value = catName;
+        opt.textContent = `${catName} (${count})`;
+        if (catName === currentCategory) opt.selected = true;
+        fcCategorySelect.appendChild(opt);
+    });
+}
+
+function selectCategory(catName) {
+    if (!fcCategories[catName]) return;
+    currentCategory = catName;
+    flashcardDeck = fcCategories[currentCategory];
+    currentCardIndex = 0;
+    renderCategoryDropdown();
+    updateDeckBadge();
+}
+
+function updateDeckBadge() {
+    if (!fcDeckCountBadge) return;
+    const count = flashcardDeck.length;
+    fcDeckCountBadge.textContent = `${count} ${count === 1 ? 'Card' : 'Cards'}`;
+    if (fcStartBtn) {
+        fcStartBtn.classList.toggle('hidden', count === 0);
+        fcStartBtn.textContent = `STUDY "${currentCategory.toUpperCase()}" (${count})`;
+    }
+}
+
+// swaps between 'setup' and 'quiz' screens
+function showFlashcardScreen(screenName) {
+    if (!fcSetupView || !fcQuizView) return;
+    const isQuiz = (screenName === 'quiz');
+    fcSetupView.classList.toggle('active-view', !isQuiz);
+    fcSetupView.classList.toggle('hidden-view', isQuiz);
+    fcQuizView.classList.toggle('active-view', isQuiz);
+    fcQuizView.classList.toggle('hidden-view', !isQuiz);
+}
+
+function renderCurrentFlashcard() {
+    if (flashcardDeck.length === 0) {
+        showFlashcardScreen('setup');
+        return;
+    }
+    if (currentCardIndex >= flashcardDeck.length) {
+        currentCardIndex = Math.max(0, flashcardDeck.length - 1);
+    }
+    const card = flashcardDeck[currentCardIndex];
+
+    fcBox.classList.remove('is-flipped');
+    fcSideHint.textContent = 'FRONT (Click card to flip)';
+    fcProgress.textContent = `${currentCategory} • Card ${currentCardIndex + 1} of ${flashcardDeck.length}`;
+    fcTermDisplay.textContent = card.term;
+    fcDefDisplay.textContent = `- ${card.definition}`;
+}
+
+function flipCurrentFlashcard() {
+    if (!fcBox) return;
+    const isNowBack = fcBox.classList.toggle('is-flipped');
+    fcSideHint.textContent = isNowBack ? 'BACK (Definition / Meaning)' : 'FRONT (Click card to flip)';
+}
+
+// 1. subject dropdown (switch, add, delete)
+if (fcCategorySelect) {
+    fcCategorySelect.addEventListener('change', () => {
+        selectCategory(fcCategorySelect.value);
+    });
+}
+
+if (fcNewCatBtn && fcNewCatRow && fcNewCatInput) {
+    fcNewCatBtn.addEventListener('click', () => {
+        fcNewCatRow.classList.remove('hidden');
+        fcNewCatInput.focus();
+    });
+}
+
+if (fcCancelCatBtn && fcNewCatRow && fcNewCatInput) {
+    fcCancelCatBtn.addEventListener('click', () => {
+        fcNewCatInput.value = '';
+        fcNewCatRow.classList.add('hidden');
+    });
+}
+
+function createNewFlashcardSubject() {
+    const name = (fcNewCatInput.value || '').trim();
+    if (!name) {
+        alert('Please enter a subject or category name!');
+        return;
+    }
+    if (!fcCategories[name]) {
+        fcCategories[name] = [];
+    }
+    currentCategory = name;
+    flashcardDeck = fcCategories[currentCategory];
+    currentCardIndex = 0;
+    fcNewCatInput.value = '';
+    fcNewCatRow.classList.add('hidden');
+    saveFlashcardCategories();
+}
+
+if (fcSaveCatBtn) {
+    fcSaveCatBtn.addEventListener('click', createNewFlashcardSubject);
+}
+
+if (fcNewCatInput) {
+    fcNewCatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            createNewFlashcardSubject();
+        }
+    });
+}
+
+if (fcDelCatBtn) {
+    fcDelCatBtn.addEventListener('click', () => {
+        if (!currentCategory) return;
+        const confirmDel = confirm(`Delete subject "${currentCategory}" and all ${flashcardDeck.length} card(s) inside it?`);
+        if (!confirmDel) return;
+
+        delete fcCategories[currentCategory];
+        const remaining = Object.keys(fcCategories);
+        if (remaining.length === 0) {
+            fcCategories['General Reviewer'] = [];
+        }
+        currentCategory = Object.keys(fcCategories)[0];
+        flashcardDeck = fcCategories[currentCategory];
+        currentCardIndex = 0;
+        saveFlashcardCategories();
+    });
+}
+
+// reads **Word** and - meaning from a .txt file
+function parseReviewerTextToCards(rawText) {
+    const cards = [];
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    let currentTerm = null;
+
+    for (const line of lines) {
+        const boldMatch = line.match(/^\*\*(.+?)\*\*$/);
+        if (boldMatch) {
+            currentTerm = boldMatch[1].trim();
+        } else if (line.startsWith('-') && currentTerm) {
+            cards.push({
+                term: currentTerm,
+                definition: line.replace(/^-+\s*/, '').trim()
+            });
+            currentTerm = null;
+        } else if (line.includes(':') && !line.startsWith('-')) {
+            const parts = line.split(':');
+            const term = parts[0].replace(/\*\*/g, '').trim();
+            const def = parts.slice(1).join(':').trim();
+            if (term && def) cards.push({ term, definition: def });
+        }
+    }
+    return cards;
+}
+
+// 2. reviewer upload (tries Python first, falls back to .txt reader if server is off)
+async function handleFlashcardFileUpload(file) {
+    if (!file) return;
+    fcUploadText.innerHTML = `<strong>Selected Reviewer:</strong><br>${file.name}`;
+
+    const formData = new FormData();
+    formData.append('reviewer_file', file);
+
+    try {
+        const response = await fetch('http://127.0.0.1:5000/generate_flashcards', {
+            method: 'POST',
+            body: formData
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data.cards) && data.cards.length > 0) {
+                flashcardDeck.push(...data.cards);
+                currentCardIndex = 0;
+                saveFlashcardCategories();
+                renderCurrentFlashcard();
+                showFlashcardScreen('quiz');
+                return;
+            }
+        }
+    } catch (e) { }
+
+    if (file.name.toLowerCase().endsWith('.txt')) {
+        const text = await file.text();
+        const parsed = parseReviewerTextToCards(text);
+        if (parsed.length > 0) {
+            flashcardDeck.push(...parsed);
+            currentCardIndex = 0;
+            saveFlashcardCategories();
+            renderCurrentFlashcard();
+            showFlashcardScreen('quiz');
+            return;
+        }
+    }
+
+    alert('Reviewer selected! Note: Connect /generate_flashcards in file_upload.py for automatic PDF/DOCX extraction, or click "Load Sample Reviewer Deck" to test right now.');
+}
+
+if (fcBrowseBtn && fcFileInput) {
+    fcBrowseBtn.addEventListener('click', () => fcFileInput.click());
+    fcFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFlashcardFileUpload(e.target.files[0]);
+    });
+}
+
+if (fcUploadZone) {
+    fcUploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        highlightZone(fcUploadZone, true);
+    });
+    fcUploadZone.addEventListener('dragleave', () => highlightZone(fcUploadZone, false));
+    fcUploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        highlightZone(fcUploadZone, false);
+        if (e.dataTransfer.files.length > 0) handleFlashcardFileUpload(e.dataTransfer.files[0]);
+    });
+}
+
+// 3. sample deck, manual add, and card delete
+if (fcSampleBtn) {
+    fcSampleBtn.addEventListener('click', () => {
+        flashcardDeck = [...sampleReviewerDeck];
+        currentCardIndex = 0;
+        saveFlashcardCategories();
+        renderCurrentFlashcard();
+        showFlashcardScreen('quiz');
+    });
+}
+
+if (fcStartBtn) {
+    fcStartBtn.addEventListener('click', () => {
+        if (flashcardDeck.length > 0) {
+            currentCardIndex = 0;
+            renderCurrentFlashcard();
+            showFlashcardScreen('quiz');
+        }
+    });
+}
+
+if (fcManualAddBtn) {
+    fcManualAddBtn.addEventListener('click', () => {
+        const term = (fcManualTerm.value || '').trim();
+        const def = (fcManualDef.value || '').trim();
+        if (!term || !def) {
+            alert('Please enter both a Word/Term and its Definition!');
+            return;
+        }
+        flashcardDeck.push({ term, definition: def });
+        fcManualTerm.value = '';
+        fcManualDef.value = '';
+        saveFlashcardCategories();
+    });
+}
+
+if (fcDeleteCardBtn) {
+    fcDeleteCardBtn.addEventListener('click', () => {
+        if (flashcardDeck.length === 0) return;
+        flashcardDeck.splice(currentCardIndex, 1);
+        saveFlashcardCategories();
+        if (flashcardDeck.length === 0) {
+            showFlashcardScreen('setup');
+        } else {
+            if (currentCardIndex >= flashcardDeck.length) {
+                currentCardIndex = flashcardDeck.length - 1;
+            }
+            renderCurrentFlashcard();
+        }
+    });
+}
+
+// 4. quiz buttons (flip, prev, next, back)
+if (fcBox) {
+    fcBox.addEventListener('click', flipCurrentFlashcard);
+}
+if (fcFlipBtn) {
+    fcFlipBtn.addEventListener('click', flipCurrentFlashcard);
+}
+if (fcPrevBtn) {
+    fcPrevBtn.addEventListener('click', () => {
+        if (flashcardDeck.length === 0) return;
+        currentCardIndex = (currentCardIndex - 1 + flashcardDeck.length) % flashcardDeck.length;
+        renderCurrentFlashcard();
+    });
+}
+if (fcNextBtn) {
+    fcNextBtn.addEventListener('click', () => {
+        if (flashcardDeck.length === 0) return;
+        currentCardIndex = (currentCardIndex + 1) % flashcardDeck.length;
+        renderCurrentFlashcard();
+    });
+}
+if (fcBackSetupBtn) {
+    fcBackSetupBtn.addEventListener('click', () => {
+        showFlashcardScreen('setup');
+    });
+}
+
+loadFlashcardCategories();

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login & Register - Student Portal</title>
 
-    <!-- Font & Design CSS -->
+    <!-- Fonts & CSS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -18,23 +18,23 @@
     <div class="login-wrapper">
         <div class="login-box">
 
-            <!-- BulSU Brand Header -->
+            <!-- Logo & title -->
             <div class="login-brand">
                 <img src="icons/BULSU.svg" alt="BulSU Logo" class="login-brand-logo">
                 <h1>EduDeck Student Portal</h1>
                 <p id="auth-subtitle">Sign in to access your dashboard</p>
             </div>
 
-            <!-- Tab Switcher (Sign In vs Register) -->
+            <!-- Sign In / Register tabs -->
             <div class="auth-tabs">
                 <button type="button" class="auth-tab-btn active" id="tab-login-btn">Sign In</button>
                 <button type="button" class="auth-tab-btn" id="tab-register-btn">Register</button>
             </div>
 
-            <!-- Notification Feedback Banner (Shows error or success messages) -->
+            <!-- Red / green alert box -->
             <div id="auth-alert" class="auth-alert"></div>
 
-            <!-- 1. SIGN IN FORM -->
+            <!-- Sign in form -->
             <form id="login-form">
                 <div class="input-group">
                     <label for="login-username">Student ID / Username</label>
@@ -64,7 +64,7 @@
                 </div>
             </form>
 
-            <!-- 2. REGISTER FORM (Hidden by default) -->
+            <!-- Register form (hidden at first) -->
             <form id="register-form" style="display: none;">
                 <div class="input-group">
                     <label for="reg-name">Full Name</label>
@@ -95,7 +95,7 @@
                 </div>
             </form>
 
-            <!-- Demo Account Hint Box for the Prototype -->
+            <!-- Demo account info for testing -->
             <div class="demo-hint-box">
                 <strong>Prototype Demo Account:</strong><br>
                 Student ID: <code>2024-0001</code> | Password: <code>password123</code><br>
@@ -105,7 +105,6 @@
         </div>
     </div>
 
-    <!-- Logic Script -->
     <script src="login_logic.js"></script>
 </body>
 

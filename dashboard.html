@@ -13,7 +13,7 @@
 </head>
 
 <body>
-    <!-- Header -->
+    <!-- Top header -->
     <header class="top-header">
         <div class="header-left">
             <img src="icons/BULSU.svg" alt="BulSU Logo" class="brand-logo">
@@ -21,7 +21,12 @@
         </div>
 
         <div class="header-right">
-            <!-- Notifications Dropdown -->
+            <!-- Dark mode button -->
+            <button type="button" class="icon-btn dark-mode-btn" id="dark-mode-toggle" aria-label="Toggle Dark Mode" title="Toggle Dark Mode">
+                <img src="icons/dark-mode.svg" alt="Dark Mode">
+            </button>
+
+            <!-- Notifications -->
             <div class="more-options-container">
                 <button class="icon-btn bell-btn" aria-label="Notifications">
                     <img src="icons/bell.svg" alt="Notifications">
@@ -31,7 +36,7 @@
                 </div>
             </div>
 
-            <!-- User Profile Dropdown -->
+            <!-- Profile menu -->
             <div class="more-options-container">
                 <div class="user-profile" style="cursor: pointer;">
                     <div class="avatar">JS</div>
@@ -46,34 +51,26 @@
         </div>
     </header>
 
-    <!-- 2. MAIN LAYOUT (Sidebar + Dashboard Content) -->
+    <!-- Sidebar + main content -->
     <div class="app-layout">
-        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <!-- Home -->
             <a href="#" class="sidebar-link active" id="nav-home-btn" title="Dashboard">
                 <img src="icons/home.svg" alt="Home">
             </a>
-            <!-- Calendar -->
             <a href="#" class="sidebar-link" id="nav-calendar-btn" title="Calendar">
                 <img src="icons/calendar.svg" alt="Calendar">
             </a>
-            <!-- Folder -->
             <a href="#" class="sidebar-link" id="nav-folder-btn" title="Folder">
                 <img src="icons/folder.svg" alt="Folder">
             </a>
-            <!-- Settings -->
             <a href="#" class="sidebar-link" id="nav-settings-btn" title="Settings">
                 <img src="icons/setting.svg" alt="Settings">
             </a>
         </aside>
 
-        <!-- Main Content -->
         <div class="content-area">
-            <!-- Dashboard Header -->
             <header class="dashboard-header">
                 <h1 id="page-title">DASHBOARD</h1>
-                <!-- Status Badge -->
                 <div class="status-badge offline">
                     <img src="icons/offline.svg" alt="Offline Mode">
                     <span>OFFLINE MODE</span>
@@ -84,17 +81,17 @@
                 </div>
             </header>
 
-            <!-- Widgets Grid (Dashboard View) -->
+            <!-- Dashboard (3 columns so cards can stack freely with no weird gaps) -->
             <main class="dashboard-grid" id="dashboard-view">
-                <section class="widget scheduler">
-                    <!-- Widget Header -->
+                <!-- Col 1 -->
+                <div class="dashboard-col" data-col="0">
+                <section class="widget scheduler" data-widget-id="scheduler">
                     <div class="widget-header">
                         <h2>SCHEDULER</h2>
                         <div class="more-options-container">
                             <button class="icon-btn" aria-label="More options">
                                 <img src="icons/more.svg" alt="More options">
                             </button>
-                            <!-- Dropdown Menu -->
                             <div class="dropdown-menu hidden">
                                 <button class="menu-item" id="add-category-btn">Add Category</button>
                                 <button class="menu-item">Remove</button>
@@ -102,24 +99,22 @@
                         </div>
                     </div>
 
-                    <!-- Scheduler Content -->
-                    <div class="scheduler-main-view" id="scheduler-container">
-                        
+                    <div class="scroll-wrap">
+                        <button type="button" class="scroll-ind scroll-ind-up hidden" aria-label="Scroll up">^</button>
+                        <div class="scheduler-main-view" id="scheduler-container">
+                            
+                        </div>
+                        <button type="button" class="scroll-ind scroll-ind-down hidden" aria-label="Scroll down">v</button>
                     </div>
 
-                    <!-- Bulk Remove Confirmation -->
                     <div class="confirm-box hidden">
                         <button class="confirm-btn">Confirm Remove</button>
                     </div>
 
-                    <!-- Templates -->
-
-                    <!-- Category Template -->
+                    <!-- Category & task templates -->
                     <template id="category-template">
                         <div class="task-category">
-                            <!-- Category Header -->
                             <div class="widget-subheader">
-                                <!-- Master Checkbox -->
                                 <label class="custom-checkbox category-checkbox">
                                     <input type="checkbox">
                                     <span class="checkmark"></span>
@@ -135,16 +130,13 @@
                                     </button>
                                 </div>
                             </div>
-                            <!-- Tasks Container -->
                             <div class="task-list"></div>
                         </div>
                     </template>
 
-                    <!-- Task Card Template -->
                     <template id="task-card-template">
                         <div class="task-card">
                             <div class="card-color-line" style="background-color: #dadce0;">
-                                <!-- Color Picker -->
                                 <input type="color" class="color-picker-input hidden">
                             </div>
                             <div class="card-main">
@@ -171,37 +163,44 @@
                         </div>
                     </template>
 
-                    <!-- Calendar View -->
+                    <!-- Popup calendar when clicking a task's bell -->
                     <div class="scheduler-calendar-view hidden">
                         
                         <div class="calendar-ui">
-                            <!-- Calendar Controls -->
                             <div class="calendar-header">
                                 <button class="icon-btn prev-month-btn">&lt;</button>
                                 <div class="month-year-selector" style="position: relative; cursor: pointer;">
                                     <h3 class="current-month-year">September 2026</h3>
                                     <div class="year-dropdown hidden">
-                                        
+                                        <button type="button" class="scroll-ind scroll-ind-up sticky-ind hidden" aria-label="Scroll up">^</button>
+                                        <button type="button" class="scroll-ind scroll-ind-down sticky-ind hidden" aria-label="Scroll down">v</button>
                                     </div>
                                 </div>
                                 <button class="icon-btn next-month-btn">&gt;</button>
                             </div>
                             
-                            <!-- Weekdays -->
                             <div class="calendar-weekdays">
                                 <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
                             </div>
                             
                             <div class="calendar-days-grid" id="calendar-days"></div>
 
-                            <!-- Time Picker -->
+                            <!-- Time picker -->
                             <div class="time-selector">
                                 <img src="icons/bell.svg" alt="Time" class="time-icon">
                                 <div class="custom-time-picker" style="position: relative;">
                                     <button class="time-display-btn">12:00 PM</button>
                                     <div class="time-dropdown hidden">
-                                        <div class="time-col hours-col" id="hours-col"></div>
-                                        <div class="time-col minutes-col" id="minutes-col"></div>
+                                        <div class="scroll-wrap time-col-wrap">
+                                            <button type="button" class="scroll-ind scroll-ind-up hidden" aria-label="Scroll up">^</button>
+                                            <div class="time-col hours-col" id="hours-col"></div>
+                                            <button type="button" class="scroll-ind scroll-ind-down hidden" aria-label="Scroll down">v</button>
+                                        </div>
+                                        <div class="scroll-wrap time-col-wrap">
+                                            <button type="button" class="scroll-ind scroll-ind-up hidden" aria-label="Scroll up">^</button>
+                                            <div class="time-col minutes-col" id="minutes-col"></div>
+                                            <button type="button" class="scroll-ind scroll-ind-down hidden" aria-label="Scroll down">v</button>
+                                        </div>
                                         <div class="time-col ampm-col" id="ampm-col">
                                             <div class="time-option ampm-option">AM</div>
                                             <div class="time-option ampm-option active">PM</div>
@@ -210,7 +209,6 @@
                                 </div>
                             </div>
 
-                            <!-- Calendar Actions -->
                             <div class="calendar-actions">
                                 <button class="cancel-date-btn">Cancel</button>
                                 <button class="confirm-date-btn">Save Date</button>
@@ -218,14 +216,69 @@
                         </div>
                     </div>
                 </section>
-                <!-- Video Compressor Widget -->
-                <section class="widget compressor">
-                    <!-- Widget Header -->
+
+                <!-- Quick Notes -->
+                <section class="widget quick-notes" data-widget-id="quick-notes">
+                    <div class="widget-header">
+                        <h2>QUICK NOTES</h2>
+                        <div class="more-options-container">
+                            <button class="icon-btn" aria-label="More options">
+                                <img src="icons/more.svg" alt="More options">
+                            </button>
+                            <div class="dropdown-menu hidden">
+                                <button class="menu-item" id="add-note-dropdown-btn">Add Note</button>
+                                <button class="menu-item">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="widget-subheader">
+                        <h3>YOUR NOTES</h3>
+                        <button class="icon-btn add-btn" aria-label="Add note">
+                            <img src="icons/plus.svg" alt="Add note">
+                        </button>
+                    </div>
+
+                    <div class="scroll-wrap">
+                        <button type="button" class="scroll-ind scroll-ind-up hidden" aria-label="Scroll up">^</button>
+                        <div class="notes-main-view" id="notes-container"></div>
+                        <button type="button" class="scroll-ind scroll-ind-down hidden" aria-label="Scroll down">v</button>
+                    </div>
+
+                    <div class="confirm-box hidden">
+                        <button class="confirm-btn">Confirm Remove</button>
+                    </div>
+
+                    <template id="note-card-template">
+                        <div class="task-card note-card">
+                            <div class="card-color-line" style="background-color: #f29900;">
+                                <input type="color" class="color-picker-input hidden">
+                            </div>
+                            <div class="card-main">
+                                <div class="card-row top-row">
+                                    <div class="task-title-group">
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" class="task-checkbox">
+                                            <span class="checkmark"></span>
+                                        </label>
+                                        <p class="note-text" contenteditable="true">Type your note here...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </section>
+                </div>
+
+                <!-- Col 2 -->
+                <div class="dashboard-col" data-col="1">
+                <!-- Video Compressor -->
+                <section class="widget compressor" data-widget-id="compressor">
                     <div class="widget-header">
                         <h2>VIDEO COMPRESSOR</h2>
                     </div>
 
-                    <!-- VIEW 1: Upload & Destination View -->
+                    <!-- upload screen -->
                     <div class="video-view active-view" id="video-upload-view">
                         <div class="upload-zone" id="video-upload-zone">
                             <img src="icons/file.svg" alt="File Icon" class="upload-icon">
@@ -235,7 +288,7 @@
                             <input type="file" class="file-input hidden" id="video-file-input" accept="video/*">
                         </div>
 
-                        <!-- Choose where the compressed file appears (Click to open file manager) -->
+                        <!-- save folder picker -->
                         <div class="video-dest-box" id="video-dest-box">
                             <div class="video-dest-info">
                                 <span class="video-dest-label">Save Location:</span>
@@ -248,14 +301,13 @@
                                 <img src="icons/folder.svg" alt="" class="video-dest-btn-icon">
                                 <span>Browse...</span>
                             </button>
-                            <!-- Hidden directory input for fallback folder selection -->
                             <input type="file" id="video-dest-folder-input" webkitdirectory directory class="hidden">
                         </div>
 
                         <button class="compress-btn" id="video-compress-btn">COMPRESS NOW</button>
                     </div>
 
-                    <!-- VIEW 2: Loading / Compressing Screen -->
+                    <!-- loading screen -->
                     <div class="video-view hidden-view" id="video-loading-view">
                         <div class="video-loading-box">
                             <div class="video-spinner"></div>
@@ -267,13 +319,11 @@
                         </div>
                     </div>
 
-                    <!-- VIEW 3: Finished / Result Screen -->
+                    <!-- result screen -->
                     <div class="video-view hidden-view" id="video-result-view">
                         <div class="video-result-box">
                             <div class="video-result-title">✓ Compression Finished!</div>
-                            <div class="video-result-stats" id="video-result-stats">
-                                <!-- Stats injected by JS -->
-                            </div>
+                            <div class="video-result-stats" id="video-result-stats"></div>
                             <span class="video-result-badge" id="video-saved-badge">Saved 0%</span>
                             <div class="video-result-location" id="video-result-location">
                                 Saved inside: <code>Upload_backend/</code>
@@ -285,13 +335,13 @@
                     </div>
                 </section>
 
-                <!-- Document Tools Widget -->
-                <section class="widget doc-tools">
+                <!-- Document Tools -->
+                <section class="widget doc-tools" data-widget-id="doc-tools">
                     <div class="widget-header">
                         <h2>DOCUMENT TOOLS</h2>
                     </div>
 
-                    <!-- View 1: Upload Zone -->
+                    <!-- upload screen -->
                     <div class="doc-tools-view active-view" id="doc-upload-view">
                         <div class="upload-zone" id="doc-upload-zone">
                             <img src="icons/file.svg" alt="File Icon" class="upload-icon">
@@ -301,11 +351,9 @@
                         </div>
                     </div>
 
-                    <!-- View 2: Action Selection (Animates in) -->
+                    <!-- convert / merge choices -->
                     <div class="doc-tools-view hidden-view" id="doc-action-view">
-                        <div class="doc-file-info" id="doc-selected-files">
-                            <!-- File names go here -->
-                        </div>
+                        <div class="doc-file-info" id="doc-selected-files"></div>
                         
                         <p class="doc-action-title">What would you like to do?</p>
                         
@@ -326,70 +374,91 @@
                         <button class="cancel-date-btn" id="doc-cancel-btn" style="margin-top: 15px; width: 100%;">Cancel / Start Over</button>
                     </div>
                 </section>
+                </div>
 
-                <!-- Quick Notes Widget -->
-                <section class="widget quick-notes">
-                    <!-- Widget Header -->
+                <!-- Col 3 -->
+                <div class="dashboard-col" data-col="2">
+                <!-- Flashcards -->
+                <section class="widget flashcards" data-widget-id="flashcards">
                     <div class="widget-header">
-                        <h2>QUICK NOTES</h2>
-                        <div class="more-options-container">
-                            <button class="icon-btn" aria-label="More options">
-                                <img src="icons/more.svg" alt="More options">
-                            </button>
-                            <!-- Dropdown Menu -->
-                            <div class="dropdown-menu hidden">
-                                <button class="menu-item" id="add-note-dropdown-btn">Add Note</button>
-                                <button class="menu-item">Remove</button>
+                        <h2>FLASHCARDS QUIZZER</h2>
+                        <span class="flashcard-badge" id="flashcard-deck-count">0 Cards</span>
+                    </div>
+
+                    <!-- setup screen (pick subject, upload reviewer, or add cards) -->
+                    <div class="flashcard-view active-view" id="flashcard-setup-view">
+                        <div class="fc-category-bar">
+                            <div class="fc-category-row">
+                                <select id="fc-category-select" class="fc-category-select" aria-label="Select Subject Category"></select>
+                                <button type="button" class="fc-cat-btn fc-cat-new-btn" id="fc-new-cat-btn" title="Create New Subject">+ Subject</button>
+                                <button type="button" class="fc-cat-btn fc-cat-del-btn" id="fc-del-cat-btn" title="Delete Current Subject">Delete</button>
                             </div>
+                            <div class="fc-new-cat-row hidden" id="fc-new-cat-row">
+                                <input type="text" id="fc-new-cat-input" class="fc-input" placeholder="Subject name (e.g. Web Dev, Purposive Comm)...">
+                                <button type="button" class="fc-cat-save-btn" id="fc-save-cat-btn">Save</button>
+                                <button type="button" class="fc-cat-cancel-btn" id="fc-cancel-cat-btn" title="Cancel">&times;</button>
+                            </div>
+                        </div>
+
+                        <div class="upload-zone flashcard-upload-zone" id="flashcard-upload-zone">
+                            <img src="icons/file.svg" alt="File Icon" class="upload-icon">
+                            <p class="upload-text" id="flashcard-upload-text">Drop Reviewer File Here<br><span class="upload-subtext">(.pdf, .docx, or .txt)</span></p>
+                            <button type="button" class="browse-btn" id="flashcard-browse-btn">Browse Reviewer</button>
+                            <input type="file" class="file-input hidden" id="flashcard-file-input" accept=".pdf,.docx,.txt">
+                        </div>
+
+                        <div class="flashcard-quick-actions">
+                            <button type="button" class="flashcard-sample-btn" id="flashcard-sample-btn">Load Sample Reviewer Deck</button>
+                            <button type="button" class="compress-btn hidden" id="flashcard-start-btn">START QUIZZER</button>
+                        </div>
+
+                        <div class="flashcard-manual-box">
+                            <span class="flashcard-manual-label">Quick Add Card:</span>
+                            <input type="text" id="fc-manual-term" class="fc-input" placeholder="Word / Term (Front)">
+                            <input type="text" id="fc-manual-def" class="fc-input" placeholder="Definition / Meaning (Back)">
+                            <button type="button" class="fc-add-btn" id="fc-manual-add-btn">+ Add to Deck</button>
                         </div>
                     </div>
 
-                    <!-- Notes Actions -->
-                    <div class="widget-subheader">
-                        <h3>YOUR NOTES</h3>
-                        <button class="icon-btn add-btn" aria-label="Add note">
-                            <img src="icons/plus.svg" alt="Add note">
-                        </button>
-                    </div>
+                    <!-- quiz screen -->
+                    <div class="flashcard-view hidden-view" id="flashcard-quiz-view">
+                        <div class="flashcard-quiz-top">
+                            <span class="flashcard-progress" id="flashcard-progress">Card 1 of 5</span>
+                            <span class="flashcard-side-hint" id="flashcard-side-hint">FRONT (Click card to flip)</span>
+                        </div>
 
-                    <!-- Notes Container -->
-                    <div class="notes-main-view" id="notes-container">
-                        <!-- Javascript will inject note cards here -->
-                    </div>
-
-                    <!-- Confirm Remove Box -->
-                    <div class="confirm-box hidden">
-                        <button class="confirm-btn">Confirm Remove</button>
-                    </div>
-
-                    <!-- Note Template -->
-                    <template id="note-card-template">
-                        
-                        <div class="task-card note-card">
-                            <div class="card-color-line" style="background-color: #f29900;">
-                                <!-- Color Picker -->
-                                <input type="color" class="color-picker-input hidden">
-                            </div>
-                            <div class="card-main">
-                                <div class="card-row top-row">
-                                    <div class="task-title-group">
-                                        <label class="custom-checkbox">
-                                            <input type="checkbox" class="task-checkbox">
-                                            <span class="checkmark"></span>
-                                        </label>
-                                        <p class="note-text" contenteditable="true">Type your note here...</p>
-                                    </div>
+                        <div class="flashcard-stage" id="flashcard-box" title="Click to flip card">
+                            <div class="flashcard-inner" id="flashcard-inner">
+                                <div class="flashcard-front">
+                                    <span class="fc-tag">TERM</span>
+                                    <strong class="fc-term-text" id="fc-term-display">Term</strong>
+                                </div>
+                                <div class="flashcard-back">
+                                    <span class="fc-tag">DEFINITION</span>
+                                    <p class="fc-def-text" id="fc-def-display">- Definition</p>
                                 </div>
                             </div>
                         </div>
-                    </template>
+
+                        <div class="flashcard-controls">
+                            <button type="button" class="fc-ctrl-btn" id="fc-prev-btn">&larr; Previous</button>
+                            <button type="button" class="fc-ctrl-btn fc-flip-btn" id="fc-flip-btn">Flip Card</button>
+                            <button type="button" class="fc-ctrl-btn" id="fc-next-btn">Next &rarr;</button>
+                        </div>
+
+                        <div class="flashcard-bottom-row">
+                            <button type="button" class="video-secondary-btn" id="fc-back-setup-btn" style="margin-top: 0;">Back to Subjects</button>
+                            <button type="button" class="fc-delete-card-btn" id="fc-delete-card-btn" title="Remove this card from subject">Delete Card</button>
+                        </div>
+                    </div>
                 </section>
+                </div>
             </main>
 
-            <!-- Calendar Section View (Smoothly replaces Dashboard Cards) -->
+            <!-- Calendar page (from sidebar) -->
             <main class="calendar-page-view hidden" id="calendar-page-view">
                 <div class="calendar-page-layout">
-                    <!-- Left: Full Monthly Calendar -->
+                    <!-- Month grid on the left -->
                     <section class="widget cal-page-widget">
                         <div class="widget-header">
                             <h2>MONTHLY CALENDAR</h2>
@@ -405,12 +474,9 @@
                             <div class="cal-weekdays-grid">
                                 <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                             </div>
-                            <div class="cal-days-grid" id="cal-page-days-grid">
-                                <!-- Days injected dynamically by JS -->
-                            </div>
+                            <div class="cal-days-grid" id="cal-page-days-grid"></div>
                         </div>
 
-                        <!-- Legend -->
                         <div class="cal-legend-bar">
                             <div class="cal-legend-item">
                                 <span class="cal-legend-dot dot-doing"></span>
@@ -427,29 +493,211 @@
                         </div>
                     </section>
 
-                    <!-- Right: Schedules from Scheduler -->
+                    <!-- Task list on the right -->
                     <section class="widget cal-schedules-widget">
                         <div class="widget-header">
                             <h2>SCHEDULES FROM SCHEDULER</h2>
                             <span class="schedules-counter-badge" id="schedules-counter-badge">0 Tasks</span>
                         </div>
 
-                        <!-- Filter Status Bar -->
                         <div class="schedules-filter-row">
                             <span class="schedules-filter-text" id="schedules-filter-text">All Scheduled Tasks</span>
                             <button type="button" class="schedules-reset-btn hidden" id="schedules-reset-btn">Show All</button>
                         </div>
 
-                        <!-- Schedules Container -->
-                        <div class="schedules-card-list" id="schedules-card-list">
-                            <!-- Injected by JavaScript -->
+                        <div class="scroll-wrap">
+                            <button type="button" class="scroll-ind scroll-ind-up hidden" aria-label="Scroll up">^</button>
+                            <div class="schedules-card-list" id="schedules-card-list"></div>
+                            <button type="button" class="scroll-ind scroll-ind-down hidden" aria-label="Scroll down">v</button>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <!-- Settings page (from sidebar) -->
+            <main class="settings-page-view hidden" id="settings-page-view">
+                <div class="settings-grid">
+                    <!-- 1. Profile -->
+                    <section class="widget settings-card">
+                        <div class="widget-header">
+                            <h2>PROFILE SETTINGS</h2>
+                        </div>
+                        <div class="settings-profile-row">
+                            <div class="avatar settings-avatar-preview" id="settings-avatar-preview">JS</div>
+                            <div class="settings-avatar-actions">
+                                <label for="settings-avatar-input" class="browse-btn settings-upload-label">Change Photo</label>
+                                <input type="file" id="settings-avatar-input" class="hidden" accept=".png,.jpg,.jpeg,.webp,.gif,image/*">
+                                <span class="settings-hint">Supports PNG, JPG, WEBP, GIF</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="settings-display-name">Display Name</label>
+                            <input type="text" id="settings-display-name" placeholder="Enter your full name" value="John Smith">
+                        </div>
+                        <div class="input-group">
+                            <label for="settings-student-id">Student ID</label>
+                            <input type="text" id="settings-student-id" placeholder="e.g. 2024-0001" value="2024-0001">
+                        </div>
+                        <button type="button" class="compress-btn" id="save-profile-btn">Save Profile</button>
+                    </section>
+
+                    <!-- 2. Notifications & Sounds -->
+                    <section class="widget settings-card">
+                        <div class="widget-header">
+                            <h2>NOTIFICATION &amp; SOUND SETTINGS</h2>
+                        </div>
+                        <div class="settings-toggle-row">
+                            <div>
+                                <div class="settings-item-title">Task Reminders</div>
+                                <div class="settings-item-sub">Play alert sound when scheduled tasks are due</div>
+                            </div>
+                            <input type="checkbox" id="toggle-task-reminders" class="settings-checkbox" checked>
+                        </div>
+                        <div class="settings-toggle-row">
+                            <div>
+                                <div class="settings-item-title">Connection Alerts</div>
+                                <div class="settings-item-sub">Sound effect when a classmate connects on LAN</div>
+                            </div>
+                            <input type="checkbox" id="toggle-conn-alerts" class="settings-checkbox" checked>
+                        </div>
+
+                        <div class="settings-slider-group">
+                            <div class="settings-slider-header">
+                                <label for="connected-sound-volume">Connected Sound Volume</label>
+                                <span id="connected-vol-label">80%</span>
+                            </div>
+                            <div class="settings-slider-controls">
+                                <input type="range" id="connected-sound-volume" class="settings-range" min="0" max="100" value="80">
+                                <button type="button" class="settings-test-btn" id="test-connected-sound-btn">Test Sound</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-slider-group">
+                            <div class="settings-slider-header">
+                                <label for="alert-sound-volume">Alert Sound Volume</label>
+                                <span id="alert-vol-label">85%</span>
+                            </div>
+                            <div class="settings-slider-controls">
+                                <input type="range" id="alert-sound-volume" class="settings-range" min="0" max="100" value="85">
+                                <button type="button" class="settings-test-btn" id="test-alert-sound-btn">Test Sound</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 3. LAN / Hotspot -->
+                    <section class="widget settings-card">
+                        <div class="widget-header">
+                            <h2>CONNECTION &amp; LAN HOTSPOT</h2>
+                            <span class="lan-status-pill" id="lan-status-pill">LAN Active</span>
+                        </div>
+                        <div class="settings-lan-info">
+                            <div class="lan-ip-box">
+                                <span class="lan-ip-label">Local Host IP Address:</span>
+                                <code class="lan-ip-code" id="lan-ip-display">192.168.1.105:5000</code>
+                            </div>
+                            <div class="settings-toggle-row" style="margin-bottom: 0;">
+                                <div>
+                                    <div class="settings-item-title">Hotspot File Sharing</div>
+                                    <div class="settings-item-sub">Allow classmates on the same Wi-Fi/Hotspot to share files</div>
+                                </div>
+                                <input type="checkbox" id="toggle-hotspot-sharing" class="settings-checkbox" checked>
+                            </div>
+                        </div>
+
+                        <div class="settings-peers-section">
+                            <h3 class="settings-sub-heading">Connected Classmates / Peers</h3>
+                            <div class="peers-list" id="connected-peers-list">
+                                <div class="peer-item">
+                                    <div class="peer-info">
+                                        <span class="peer-online-dot"></span>
+                                        <div>
+                                            <div class="peer-name">Maria Clara Santos</div>
+                                            <div class="peer-ip">192.168.1.108 • BSIT 3A</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="peer-disconnect-btn">Disconnect</button>
+                                </div>
+                                <div class="peer-item">
+                                    <div class="peer-info">
+                                        <span class="peer-online-dot"></span>
+                                        <div>
+                                            <div class="peer-name">Earl Justine Reyes</div>
+                                            <div class="peer-ip">192.168.1.112 • BSIT 3A</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="peer-disconnect-btn">Disconnect</button>
+                                </div>
+                                <div class="peer-item">
+                                    <div class="peer-info">
+                                        <span class="peer-online-dot"></span>
+                                        <div>
+                                            <div class="peer-name">Nishky Mendoza</div>
+                                            <div class="peer-ip">192.168.1.119 • BSIT 3A</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="peer-disconnect-btn">Disconnect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 4. Storage & Preferences -->
+                    <section class="widget settings-card">
+                        <div class="widget-header">
+                            <h2>APP &amp; STORAGE PREFERENCES</h2>
+                        </div>
+                        <div class="input-group">
+                            <label for="settings-compression-preset">Default Video Compression Preset</label>
+                            <select id="settings-compression-preset" class="settings-select">
+                                <option value="balanced" selected>Balanced - Recommended</option>
+                                <option value="smallest">Smallest File Size</option>
+                                <option value="high">High Quality</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-storage-box">
+                            <div class="storage-row">
+                                <span>Local Storage &amp; Offline Cache:</span>
+                                <strong id="storage-usage-text">Calculating...</strong>
+                            </div>
+                            <div class="storage-bar-track">
+                                <div class="storage-bar-fill" id="storage-bar-fill" style="width: 18%;"></div>
+                            </div>
+                            <button type="button" class="video-secondary-btn" id="clear-cache-btn">Clear Offline Cache</button>
+                        </div>
+                    </section>
+
+                    <!-- 5. Password & Account -->
+                    <section class="widget settings-card">
+                        <div class="widget-header">
+                            <h2>ACCOUNT &amp; SECURITY</h2>
+                        </div>
+                        <button type="button" class="video-secondary-btn" id="toggle-password-form-btn" style="margin-top: 0; margin-bottom: 12px;">
+                            Forgot / Change Password
+                        </button>
+
+                        <div class="password-collapse-box hidden" id="password-collapse-box">
+                            <div class="input-group">
+                                <label for="sec-current-pass">Current Password</label>
+                                <input type="password" id="sec-current-pass" placeholder="Enter current password">
+                            </div>
+                            <div class="input-group">
+                                <label for="sec-new-pass">New Password</label>
+                                <input type="password" id="sec-new-pass" placeholder="Enter new password">
+                            </div>
+                            <button type="button" class="compress-btn" id="save-password-btn" style="margin-bottom: 14px;">Update Password</button>
+                        </div>
+
+                        <div class="danger-zone-box">
+                            <div class="danger-zone-title">Danger Zone</div>
+                            <p class="danger-zone-desc">Permanently delete your local student profile and saved settings on this device.</p>
+                            <button type="button" class="confirm-btn" id="delete-account-btn" style="width: 100%;">Delete Account</button>
                         </div>
                     </section>
                 </div>
             </main>
         </div>
     </div>
-    <!-- External Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="dashboard_logic.js"></script>
 </body>
