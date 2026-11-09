@@ -1364,6 +1364,8 @@ const testAlertSoundBtn = document.getElementById('test-alert-sound-btn');
 
 const toggleHotspotSharing = document.getElementById('toggle-hotspot-sharing');
 const lanStatusPill = document.getElementById('lan-status-pill');
+const statusBadgeOffline = document.getElementById('status-badge-offline');
+const statusBadgeLan = document.getElementById('status-badge-lan');
 const connectedPeersList = document.getElementById('connected-peers-list');
 
 const compressionPresetSelect = document.getElementById('settings-compression-preset');
@@ -1546,17 +1548,42 @@ if (testAlertSoundBtn) {
     });
 }
 
-// 3. hotspot toggle + connected classmates list
-if (toggleHotspotSharing && lanStatusPill) {
-    toggleHotspotSharing.addEventListener('change', () => {
-        const isActive = toggleHotspotSharing.checked;
+// 3. LAN mode badge + hotspot toggle + connected classmates list
+function setLanModeVisual(isActive, playSoundIfEnabled = false) {
+    if (statusBadgeOffline && statusBadgeLan) {
+        statusBadgeOffline.classList.toggle('hidden', isActive);
+        statusBadgeLan.classList.toggle('hidden', !isActive);
+    }
+    if (toggleHotspotSharing) {
+        toggleHotspotSharing.checked = isActive;
+    }
+    if (lanStatusPill) {
         lanStatusPill.textContent = isActive ? 'LAN Active' : 'Offline';
         lanStatusPill.classList.toggle('offline', !isActive);
+    }
 
+    if (playSoundIfEnabled && isActive) {
         const connAlertsToggle = document.getElementById('toggle-conn-alerts');
-        if (isActive && (!connAlertsToggle || connAlertsToggle.checked)) {
+        if (!connAlertsToggle || connAlertsToggle.checked) {
             playNotificationSound('connected');
         }
+    }
+}
+
+// start in offline mode by default so the badge matches the header on load
+setLanModeVisual(false, false);
+
+if (statusBadgeOffline) {
+    statusBadgeOffline.addEventListener('click', () => setLanModeVisual(true, true));
+}
+
+if (statusBadgeLan) {
+    statusBadgeLan.addEventListener('click', () => setLanModeVisual(false, false));
+}
+
+if (toggleHotspotSharing) {
+    toggleHotspotSharing.addEventListener('change', () => {
+        setLanModeVisual(toggleHotspotSharing.checked, true);
     });
 }
 
