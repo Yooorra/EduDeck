@@ -426,6 +426,17 @@ body {
     border-radius: 8px;
     font-weight: 600;
     font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.status-badge:hover {
+    opacity: 0.9;
+}
+
+.status-badge:active {
+    transform: scale(0.97);
 }
 
 .status-badge.offline {
@@ -433,9 +444,14 @@ body {
     color: var(--school-red);
 }
 
-/* hidden at first so offline & online don't both show */
-.status-badge.online {
-    display: none;
+/* green badge for LAN mode */
+.status-badge.lan {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.status-badge.lan img {
+    filter: invert(35%) sepia(74%) saturate(680%) hue-rotate(98deg) brightness(92%) contrast(92%);
 }
 
 /* "..." dropdown menus */
@@ -2090,9 +2106,14 @@ body.dark-mode .sched-status-tag.scheduled {
     border-color: rgba(245, 124, 0, 0.35);
 }
 
-body.dark-mode .sched-status-tag.doing {
+body.dark-mode .sched-status-tag.doing,
+body.dark-mode .status-badge.lan {
     background-color: rgba(22, 163, 74, 0.2);
     color: #4ade80;
+}
+
+body.dark-mode .status-badge.lan img {
+    filter: invert(76%) sepia(38%) saturate(850%) hue-rotate(84deg) brightness(98%) contrast(92%);
 }
 
 body.dark-mode .sched-status-tag.overdue,
